@@ -60,8 +60,128 @@ fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) ->
         lower
     };
 
+    // Pre-process shift operators
+    let expr = preprocess_shift_operators(&expr)?;
+
     // Evaluate mathematical expression
     eval_expr_with_context(&expr, context)
+}
+
+fn preprocess_shift_operators(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+
+    // Process << and >> operators by finding and replacing them with computed values
+    loop {
+        let left_shift_pos = result.find("<<");
+        let right_shift_pos = result.find(">>");
+
+        if left_shift_pos.is_none() && right_shift_pos.is_none() {
+            break;
+        }
+
+        // Determine which operator comes first
+        let (pos, is_left_shift) = match (left_shift_pos, right_shift_pos) {
+            (Some(l), Some(r)) if l < r => (l, true),
+            (Some(_l), Some(r)) => (r, false),
+            (Some(l), None) => (l, true),
+            (None, Some(r)) => (r, false),
+            _ => break,
+        };
+
+        // Find left operand (search backwards for operator boundaries)
+        let left_end = pos;
+        let left_start = find_operand_start(&result, left_end);
+        let left_expr = &result[left_start..left_end];
+
+        // Find right operand (search forwards for operator boundaries)
+        let right_start = pos + 2; // << or >> is 2 chars
+        let right_end = find_operand_end(&result, right_start);
+        let right_expr = &result[right_start..right_end];
+
+        // Evaluate operands
+        let left_val: i64 = eval_str(left_expr)
+            .map_err(|e| format!("Failed to evaluate left operand '{}': {}", left_expr, e))?
+            as i64;
+        let right_val: i32 = eval_str(right_expr)
+            .map_err(|e| format!("Failed to evaluate right operand '{}': {}", right_expr, e))?
+            as i32;
+
+        // Compute shift result
+        let shift_result = if is_left_shift {
+            left_val << right_val
+        } else {
+            left_val >> right_val
+        };
+
+        // Replace the shift expression with the result
+        result.replace_range(left_start..right_end, &shift_result.to_string());
+    }
+
+    Ok(result)
+}
+
+fn find_operand_start(s: &str, operand_end: usize) -> usize {
+    let chars: Vec<char> = s.chars().collect();
+    let mut pos = if operand_end > 0 { operand_end - 1 } else { 0 };
+    let mut paren_depth = 0;
+    let mut found_non_space = false;
+
+    while pos > 0 {
+        match chars[pos] {
+            ')' => paren_depth += 1,
+            '(' => {
+                if paren_depth == 0 {
+                    return pos;
+                }
+                paren_depth -= 1;
+            }
+            ' ' | '\t' if !found_non_space && paren_depth == 0 => {
+                pos -= 1;
+                continue;
+            }
+            c if is_operator_char(c) && paren_depth == 0 && found_non_space => return pos + 1,
+            ' ' | '\t' if found_non_space && paren_depth == 0 => return pos + 1,
+            _ => {
+                found_non_space = true;
+            }
+        }
+        pos -= 1;
+    }
+    0
+}
+
+fn find_operand_end(s: &str, op_start: usize) -> usize {
+    let chars: Vec<char> = s.chars().collect();
+    let mut pos = op_start;
+    let mut paren_depth = 0;
+    let mut found_non_space = false;
+
+    while pos < chars.len() {
+        match chars[pos] {
+            '(' => paren_depth += 1,
+            ')' => {
+                if paren_depth == 0 {
+                    return pos;
+                }
+                paren_depth -= 1;
+            }
+            ' ' | '\t' if !found_non_space && paren_depth == 0 => {
+                pos += 1;
+                continue;
+            }
+            c if is_operator_char(c) && paren_depth == 0 && found_non_space => return pos,
+            ' ' | '\t' if found_non_space && paren_depth == 0 => return pos,
+            _ => {
+                found_non_space = true;
+            }
+        }
+        pos += 1;
+    }
+    chars.len()
+}
+
+fn is_operator_char(c: char) -> bool {
+    matches!(c, '+' | '-' | '*' | '/' | '%' | '^' | '<' | '>' | '=' | '!')
 }
 
 fn handle_conversion(input: &str) -> Result<String, String> {
