@@ -131,6 +131,64 @@ fn convert_result(value: i64, format: &str) -> Result<String, String> {
     }
 }
 
+fn process_power_operator(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+
+    // Process ^ operator (power) by finding and replacing them with pow() function calls
+    loop {
+        // Find ^ but not ^^ (which is XOR)
+        let mut power_pos = None;
+        let chars: Vec<char> = result.chars().collect();
+        let mut i = 0;
+        while i < chars.len() {
+            if chars[i] == '^' {
+                // Check if this is ^^ (XOR, not power)
+                if i + 1 < chars.len() && chars[i + 1] == '^' {
+                    i += 2; // Skip ^^
+                    continue;
+                }
+                // This is a single ^ = power operator
+                power_pos = Some(i);
+                break;
+            }
+            i += 1;
+        }
+
+        let pos = match power_pos {
+            Some(p) => p,
+            None => break,
+        };
+
+        // Find left operand
+        let left_end = pos;
+        let left_start = find_operand_start(&result, left_end);
+        let left_expr = result[left_start..left_end].trim();
+
+        // Find right operand
+        let right_start = pos + 1;
+        let right_end = find_operand_end(&result, right_start);
+        let right_expr = result[right_start..right_end].trim();
+
+        if left_expr.is_empty() || right_expr.is_empty() {
+            break;
+        }
+
+        // Evaluate operands
+        let left_val: f64 = eval_str(left_expr)
+            .map_err(|e| format!("Failed to evaluate left operand '{}': {}", left_expr, e))?;
+        let right_val: f64 = eval_str(right_expr)
+            .map_err(|e| format!("Failed to evaluate right operand '{}': {}", right_expr, e))?;
+
+        // Compute power result
+        let power_result = left_val.powf(right_val);
+
+        // Replace the power expression with the result
+        result.replace_range(left_start..right_end, &power_result.to_string());
+    }
+
+    Ok(result)
+}
+
 fn preprocess_operators(expr: &str) -> Result<String, String> {
     let mut result = expr.to_string();
 
@@ -140,22 +198,28 @@ fn preprocess_operators(expr: &str) -> Result<String, String> {
     result = result.replace('∧', "&");
     result = result.replace('⊻', "^");
 
-    // Replace textual XOR operators
-    result = result.replace("^^", "^");
-    // Replace 'xor' with '^' - use word boundary to avoid partial matches
-    result = replace_xor(&result);
+    // Replace textual XOR operators (use ^^ for XOR since ^ is now power)
+    result = result.replace("xor", "^^");
+    // Replace ^^ with ^ for XOR processing (^^ is XOR, ^ is power)
+    result = result.replace("^^", "^^");
+
+    // Convert ** to ^ for power (we'll process ^ as power later)
+    result = result.replace("**", "^");
 
     // Convert binary literals (0b...) to decimal
     result = convert_binary_literals(&result)?;
 
-    // Process NOT operator (~) - has highest precedence
+    // Process power operator (^) - highest precedence
+    result = process_power_operator(&result)?;
+
+    // Process NOT operator (~) - has highest precedence after power
     result = process_not_operator(&result)?;
 
     // Process AND operator (&) - highest precedence after NOT
     result = process_binary_operator("&", &result, |a, b| a & b)?;
 
-    // Process XOR operator (^) - medium precedence
-    result = process_binary_operator("^", &result, |a, b| a ^ b)?;
+    // Process XOR operator (^^) - medium precedence (^^ is XOR, ^ is power)
+    result = process_binary_operator("^^", &result, |a, b| a ^ b)?;
 
     // Process OR operator (|) - lowest precedence
     result = process_binary_operator("|", &result, |a, b| a | b)?;
@@ -164,47 +228,6 @@ fn preprocess_operators(expr: &str) -> Result<String, String> {
     result = preprocess_shift_operators(&result)?;
 
     Ok(result)
-}
-
-fn replace_xor(expr: &str) -> String {
-    // Replace 'xor' with '^' while being careful about word boundaries
-    // We need to find 'xor' as a standalone word, not as part of other text
-    let mut result = String::new();
-    let mut chars = expr.chars().peekable();
-    let mut last_was_op_or_space = true; // Start of string counts as boundary
-
-    while let Some(c) = chars.next() {
-        if c == 'x' && last_was_op_or_space {
-            // Check if this is 'xor'
-            let mut peek = chars.clone();
-            if let Some('o') = peek.next() {
-                if let Some('r') = peek.next() {
-                    // Check if 'r' is followed by a boundary
-                    if let Some(next) = peek.peek() {
-                        if is_operator_char(*next) || next.is_whitespace() {
-                            // This is 'xor' as a standalone word
-                            result.push('^');
-                            chars.next(); // consume 'o'
-                            chars.next(); // consume 'r'
-                            last_was_op_or_space = true;
-                            continue;
-                        }
-                    } else {
-                        // End of string
-                        result.push('^');
-                        chars.next(); // consume 'o'
-                        chars.next(); // consume 'r'
-                        last_was_op_or_space = true;
-                        continue;
-                    }
-                }
-            }
-        }
-        last_was_op_or_space = is_operator_char(c) || c.is_whitespace();
-        result.push(c);
-    }
-
-    result
 }
 
 fn convert_binary_literals(expr: &str) -> Result<String, String> {
