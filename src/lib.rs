@@ -29,39 +29,17 @@
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
 
+pub mod fprice;
 pub mod number_theory;
 
 // Re-export common number theory functions for convenience
 pub use number_theory::{
-    abs,
-    abs_integer,
-    bernoulli,
-    ceil,
-    denominator,
-    floor,
-    frac,
-    gcd,
-    is_even,
-    is_odd,
-    is_prime,
-    lcm,
-    modulo,
-    next_prime,
-    nth_prime,
-    numerator,
-    powmod,
-    prev_prime,
-    prime_count,
-    primes_up_to,
-    rem,
-    round,
-    rounding::RoundingMode,
-    signum,
-    signum_integer,
-    totient,
-    trunc,
+    abs, abs_integer, bernoulli, ceil, denominator, floor, frac, gcd, is_even, is_odd, is_prime,
+    lcm, modulo, next_prime, nth_prime, numerator, powmod, prev_prime, prime_count, primes_up_to,
+    rem, round, rounding::RoundingMode, signum, signum_integer, totient, trunc,
 };
 
+pub use fprice::{fprice, fprice_float};
 pub use number_theory::traits::{Divisors, Gcd, Lcm};
 pub use rug;
 

@@ -1,5 +1,6 @@
 use meval::{eval_str, eval_str_with_context, Context};
 use rustyline::DefaultEditor;
+use qalculate::fprice;
 
 fn main() -> rustyline::Result<()> {
     // Check if running interactively
@@ -504,8 +505,8 @@ fn format_result(result: f64) -> Result<String, String> {
         }
         .to_string())
     } else if result.fract() == 0.0 && result.abs() < 1e15 {
-        // Show as integer for whole numbers within range
-        Ok(format!("{}", result as i64))
+        // Show as integer for whole numbers within range, with comma separators
+        Ok(fprice(result as i64))
     } else {
         Ok(format!("{}", result))
     }
