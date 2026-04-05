@@ -61,23 +61,283 @@ fn main() -> rustyline::Result<()> {
 fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) -> Result<String, String> {
     let lower = input.to_lowercase();
 
-    // Handle conversions: "<number> to hex|binary|octal"
-    if lower.contains(" to ") {
-        return handle_conversion(&lower);
-    }
-
     // Replace 'ans' with last result in expression
     let expr = if let Some(ans) = last_result {
         lower.replace("ans", &ans.to_string())
     } else {
-        lower
+        lower.clone()
     };
 
-    // Pre-process shift operators
-    let expr = preprocess_shift_operators(&expr)?;
+    // Check for conversion suffix: "<expression> to <format>"
+    if let Some((expr_part, format_part)) = extract_conversion(&expr) {
+        // Process the expression (binary conversion + bitwise ops)
+        let processed_expr = preprocess_operators(&expr_part)?;
+
+        // Evaluate the expression
+        let result: i64 = eval_str(&processed_expr)
+            .map_err(|e| format!("Failed to evaluate expression: {}", e))? as i64;
+
+        // Convert the result to the requested format
+        return convert_result(result, &format_part);
+    }
+
+    // Pre-process all operators including bitwise
+    let expr = preprocess_operators(&expr)?;
 
     // Evaluate mathematical expression
     eval_expr_with_context(&expr, context)
+}
+
+fn extract_conversion(input: &str) -> Option<(String, String)> {
+    if let Some(pos) = input.find(" to ") {
+        let expr_part = input[..pos].trim().to_string();
+        let format_part = input[pos + 4..].trim().to_string();
+        return Some((expr_part, format_part));
+    }
+    None
+}
+
+fn convert_result(value: i64, format: &str) -> Result<String, String> {
+    match format {
+        "hex" | "hexadecimal" => Ok(format!("0x{:X}", value)),
+        "binary" | "bin" => {
+            let binary_str = format!("{:b}", value);
+            // Pad with leading zeros to make length a multiple of 4
+            let padding = (4 - binary_str.len() % 4) % 4;
+            let padded = format!("{}{}", "0".repeat(padding), binary_str);
+            let spaced: String = padded
+                .chars()
+                .rev()
+                .collect::<Vec<_>>()
+                .chunks(4)
+                .map(|chunk| chunk.iter().collect::<String>())
+                .collect::<Vec<_>>()
+                .join(" ")
+                .chars()
+                .rev()
+                .collect();
+            Ok(format!("0b{}", spaced))
+        }
+        "bin4" => {
+            // 4-bit binary output
+            Ok(format!("{:04b}", value as u8 & 0xF))
+        }
+        "bin8" => {
+            // 8-bit binary output with space in the middle
+            Ok(format!("{:04b} {:04b}", (value as u8 >> 4) & 0xF, value as u8 & 0xF))
+        }
+        "octal" | "oct" => Ok(format!("0o{:o}", value)),
+        _ => Err(format!("Unknown conversion target: {}", format)),
+    }
+}
+
+fn preprocess_operators(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+
+    // Replace unicode operators with ASCII equivalents
+    result = result.replace('¬', "~");
+    result = result.replace('∨', "|");
+    result = result.replace('∧', "&");
+    result = result.replace('⊻', "^");
+
+    // Replace textual XOR operators
+    result = result.replace("^^", "^");
+    // Replace 'xor' with '^' - use word boundary to avoid partial matches
+    result = replace_xor(&result);
+
+    // Convert binary literals (0b...) to decimal
+    result = convert_binary_literals(&result)?;
+
+    // Process NOT operator (~) - has highest precedence
+    result = process_not_operator(&result)?;
+
+    // Process AND operator (&) - highest precedence after NOT
+    result = process_binary_operator("&", &result, |a, b| a & b)?;
+
+    // Process XOR operator (^) - medium precedence
+    result = process_binary_operator("^", &result, |a, b| a ^ b)?;
+
+    // Process OR operator (|) - lowest precedence
+    result = process_binary_operator("|", &result, |a, b| a | b)?;
+
+    // Process shift operators (<< and >>)
+    result = preprocess_shift_operators(&result)?;
+
+    Ok(result)
+}
+
+fn replace_xor(expr: &str) -> String {
+    // Replace 'xor' with '^' while being careful about word boundaries
+    // We need to find 'xor' as a standalone word, not as part of other text
+    let mut result = String::new();
+    let mut chars = expr.chars().peekable();
+    let mut last_was_op_or_space = true; // Start of string counts as boundary
+
+    while let Some(c) = chars.next() {
+        if c == 'x' && last_was_op_or_space {
+            // Check if this is 'xor'
+            let mut peek = chars.clone();
+            if let Some('o') = peek.next() {
+                if let Some('r') = peek.next() {
+                    // Check if 'r' is followed by a boundary
+                    if let Some(next) = peek.peek() {
+                        if is_operator_char(*next) || next.is_whitespace() {
+                            // This is 'xor' as a standalone word
+                            result.push('^');
+                            chars.next(); // consume 'o'
+                            chars.next(); // consume 'r'
+                            last_was_op_or_space = true;
+                            continue;
+                        }
+                    } else {
+                        // End of string
+                        result.push('^');
+                        chars.next(); // consume 'o'
+                        chars.next(); // consume 'r'
+                        last_was_op_or_space = true;
+                        continue;
+                    }
+                }
+            }
+        }
+        last_was_op_or_space = is_operator_char(c) || c.is_whitespace();
+        result.push(c);
+    }
+
+    result
+}
+
+fn convert_binary_literals(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+    let mut pos = 0;
+
+    while pos < result.len() {
+        // Find "0b" prefix
+        if let Some(pb_start) = result[pos..].find("0b") {
+            let abs_pb_start = pos + pb_start;
+            let binary_start = abs_pb_start + 2;
+
+            // Find the end of the binary literal
+            let mut binary_end = binary_start;
+            let chars: Vec<char> = result.chars().collect();
+            let mut has_valid_digit = false;
+
+            while binary_end < chars.len() {
+                let c = chars[binary_end];
+                if c == '0' || c == '1' {
+                    has_valid_digit = true;
+                    binary_end += 1;
+                } else if c == ' ' {
+                    // Allow spaces in binary literals for readability
+                    binary_end += 1;
+                } else {
+                    break;
+                }
+            }
+
+            if has_valid_digit {
+                // Extract the binary string (removing spaces)
+                let binary_str: String = result[binary_start..binary_end]
+                    .chars()
+                    .filter(|c| *c != ' ')
+                    .collect();
+
+                // Parse and convert to decimal
+                if let Ok(value) = i64::from_str_radix(&binary_str, 2) {
+                    result.replace_range(abs_pb_start..binary_end, &value.to_string());
+                    pos = abs_pb_start + value.to_string().len();
+                    continue;
+                }
+            }
+        }
+        pos += 1;
+    }
+
+    Ok(result)
+}
+
+fn process_not_operator(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+
+    // Process ~ operator by finding and replacing them with computed values
+    loop {
+        let not_pos = result.find('~');
+
+        if not_pos.is_none() {
+            break;
+        }
+
+        let pos = not_pos.unwrap();
+
+        // Find right operand (search forwards for operator boundaries)
+        let right_start = pos + 1; // ~ is 1 char
+        let right_end = find_operand_end(&result, right_start);
+        let right_expr = result[right_start..right_end].trim();
+
+        if right_expr.is_empty() {
+            break;
+        }
+
+        // Evaluate operand
+        let right_val: i64 = eval_str(right_expr)
+            .map_err(|e| format!("Failed to evaluate operand '{}': {}", right_expr, e))?
+            as i64;
+
+        // Compute NOT result
+        let not_result = !right_val;
+
+        // Replace the NOT expression with the result
+        result.replace_range(pos..right_end, &not_result.to_string());
+    }
+
+    Ok(result)
+}
+
+fn process_binary_operator<F>(op: &str, expr: &str, op_func: F) -> Result<String, String>
+where
+    F: Fn(i64, i64) -> i64,
+{
+    let mut result = expr.to_string();
+
+    loop {
+        let op_pos = result.find(op);
+
+        if op_pos.is_none() {
+            break;
+        }
+
+        let pos = op_pos.unwrap();
+
+        // Find left operand
+        let left_end = pos;
+        let left_start = find_operand_start(&result, left_end);
+        let left_expr = result[left_start..left_end].trim();
+
+        // Find right operand
+        let right_start = pos + op.len();
+        let right_end = find_operand_end(&result, right_start);
+        let right_expr = result[right_start..right_end].trim();
+
+        if left_expr.is_empty() || right_expr.is_empty() {
+            break;
+        }
+
+        // Evaluate operands
+        let left_val: i64 = eval_str(left_expr)
+            .map_err(|e| format!("Failed to evaluate left operand '{}': {}", left_expr, e))?
+            as i64;
+        let right_val: i64 = eval_str(right_expr)
+            .map_err(|e| format!("Failed to evaluate right operand '{}': {}", right_expr, e))?
+            as i64;
+
+        // Compute result
+        let op_result = op_func(left_val, right_val);
+
+        // Replace the expression with the result
+        result.replace_range(left_start..right_end, &op_result.to_string());
+    }
+
+    Ok(result)
 }
 
 fn preprocess_shift_operators(expr: &str) -> Result<String, String> {
@@ -194,41 +454,7 @@ fn find_operand_end(s: &str, op_start: usize) -> usize {
 }
 
 fn is_operator_char(c: char) -> bool {
-    matches!(c, '+' | '-' | '*' | '/' | '%' | '^' | '<' | '>' | '=' | '!')
-}
-
-fn handle_conversion(input: &str) -> Result<String, String> {
-    let parts: Vec<&str> = input.split(" to ").collect();
-    if parts.len() != 2 {
-        return Err("Invalid conversion format".to_string());
-    }
-
-    let num: i128 = parts[0].parse().map_err(|_| "Invalid number".to_string())?;
-    let target = parts[1].trim();
-
-    match target {
-        "hex" | "hexadecimal" => Ok(format!("0x{:X}", num)),
-        "binary" | "bin" => {
-            let binary_str = format!("{:b}", num);
-            // Pad with leading zeros to make length a multiple of 4
-            let padding = (4 - binary_str.len() % 4) % 4;
-            let padded = format!("{}{}", "0".repeat(padding), binary_str);
-            let spaced: String = padded
-                .chars()
-                .rev()
-                .collect::<Vec<_>>()
-                .chunks(4)
-                .map(|chunk| chunk.iter().collect::<String>())
-                .collect::<Vec<_>>()
-                .join(" ")
-                .chars()
-                .rev()
-                .collect();
-            Ok(format!("0b{}", spaced))
-        }
-        "octal" | "oct" => Ok(format!("0o{:o}", num)),
-        _ => Err(format!("Unknown conversion target: {}", target)),
-    }
+    matches!(c, '+' | '-' | '*' | '/' | '%' | '^' | '<' | '>' | '=' | '!' | '~' | '|' | '&')
 }
 
 fn eval_expr_with_context(expr: &str, context: &Context) -> Result<String, String> {
