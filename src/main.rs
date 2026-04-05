@@ -197,7 +197,10 @@ fn handle_conversion(input: &str) -> Result<String, String> {
         "hex" | "hexadecimal" => Ok(format!("0x{:X}", num)),
         "binary" | "bin" => {
             let binary_str = format!("{:b}", num);
-            let spaced: String = binary_str
+            // Pad with leading zeros to make length a multiple of 4
+            let padding = (4 - binary_str.len() % 4) % 4;
+            let padded = format!("{}{}", "0".repeat(padding), binary_str);
+            let spaced: String = padded
                 .chars()
                 .rev()
                 .collect::<Vec<_>>()
