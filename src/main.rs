@@ -2,9 +2,14 @@ use meval::{eval_str, eval_str_with_context, Context};
 use rustyline::DefaultEditor;
 
 fn main() -> rustyline::Result<()> {
-    println!("Qalculate CLI - Interactive Calculator");
-    println!("Type 'exit' or 'quit' to exit\n");
-    println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.");
+    // Check if running interactively
+    let is_interactive = atty::is(atty::Stream::Stdin);
+
+    if is_interactive {
+        println!("Qalculate CLI - Interactive Calculator");
+        println!("Type 'exit' or 'quit' to exit\n");
+        println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.");
+    }
 
     let mut context = Context::new();
     let mut last_result: Option<f64> = None;
