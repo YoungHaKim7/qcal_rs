@@ -195,7 +195,21 @@ fn handle_conversion(input: &str) -> Result<String, String> {
 
     match target {
         "hex" | "hexadecimal" => Ok(format!("0x{:X}", num)),
-        "binary" | "bin" => Ok(format!("0b{:b}", num)),
+        "binary" | "bin" => {
+            let binary_str = format!("{:b}", num);
+            let spaced: String = binary_str
+                .chars()
+                .rev()
+                .collect::<Vec<_>>()
+                .chunks(4)
+                .map(|chunk| chunk.iter().collect::<String>())
+                .collect::<Vec<_>>()
+                .join(" ")
+                .chars()
+                .rev()
+                .collect();
+            Ok(format!("0b{}", spaced))
+        }
         "octal" | "oct" => Ok(format!("0o{:o}", num)),
         _ => Err(format!("Unknown conversion target: {}", target)),
     }
