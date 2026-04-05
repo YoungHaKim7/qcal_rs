@@ -1,0 +1,26 @@
+[package]
+name = "qcal_rs"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+
+description = "Number theory functions library - Rust port of libqalculate number theory module"
+license = "GPL-2.0-or-later"
+repository = "https://github.com/Qalculate/libqalculate"
+keywords = ["math", "number-theory", "primes", "gcd", "lcm"]
+categories = ["mathematics", "algorithms"]
+
+[dependencies]
+rug = "1.24"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[lib]
+name = "qalculate"
+path = "src/lib.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
