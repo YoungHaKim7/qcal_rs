@@ -1,24 +1,25 @@
 use meval::{eval_str, eval_str_with_context, Context};
-use std::io::{self, Write};
+use rustyline::DefaultEditor;
 
-fn main() {
+fn main() -> rustyline::Result<()> {
     println!("Qalculate CLI - Interactive Calculator");
     println!("Type 'exit' or 'quit' to exit\n");
     println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.");
 
     let mut context = Context::new();
     let mut last_result: Option<f64> = None;
+    let mut rl = DefaultEditor::new()?;
 
     // Add common constants
     context.var("pi", std::f64::consts::PI);
     context.var("e", std::f64::consts::E);
 
     loop {
-        print!("> ");
-        io::stdout().flush().unwrap();
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+        let input = rl.readline("> ");
+        let input = match input {
+            Ok(line) => line,
+            Err(_) => break,
+        };
         let input = input.trim();
 
         if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
@@ -42,7 +43,14 @@ fn main() {
                 eprintln!("Error: {}", e);
             }
         }
+
+        // Add non-empty input to history
+        if !input.is_empty() {
+            let _ = rl.add_history_entry(input);
+        }
     }
+
+    Ok(())
 }
 
 fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) -> Result<String, String> {
