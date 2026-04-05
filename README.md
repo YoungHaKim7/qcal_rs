@@ -1,6 +1,6 @@
 # qcal_rs
-https://github.com/Qalculate/libqalculate
-
+- Converting C++ Code to Rust Code 
+  - https://github.com/Qalculate/libqalculate
 
 # `qcal_rs`
 
