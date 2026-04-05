@@ -51,3 +51,9 @@ All 36 unit tests pass, covering:
 
 The implementation uses the `rug` crate for arbitrary-precision arithmetic and is fully compatible with the original C++ libqalculate number theory API.
 
+
+- Now working. The calculator supports:
+
+- **Math expressions**: `sqrt(72)`, `2^3 + 5`, `sin(pi)`, `log(100)`
+- **Hex/binary/octal conversions**: `133 to hex`, `255 to binary`, `64 to octal`
+- **Last result reference**: use `ans` to reference the previous result

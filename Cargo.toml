@@ -11,6 +11,7 @@ keywords = ["math", "number-theory", "primes", "gcd", "lcm"]
 categories = ["mathematics", "algorithms"]
 
 [dependencies]
+meval = "0.2"
 rug = "1.24"
 
 [dev-dependencies]
