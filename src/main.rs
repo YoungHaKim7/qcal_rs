@@ -2,6 +2,37 @@ use meval::{eval_str, eval_str_with_context, Context};
 use rustyline::DefaultEditor;
 use qalculate::fprice;
 
+fn format_binary_64bit(value: i64) -> String {
+    // Get 64-bit binary representation
+    let bits = format!("{:064b}", value);
+
+    // Split into upper and lower 32 bits
+    let upper = &bits[0..32];
+    let lower = &bits[32..64];
+
+    // Format each half with double spaces between 4-bit groups
+    let upper_formatted: String = upper
+        .chars()
+        .collect::<Vec<_>>()
+        .chunks(4)
+        .map(|chunk| chunk.iter().collect::<String>())
+        .collect::<Vec<_>>()
+        .join("  ");
+
+    let lower_formatted: String = lower
+        .chars()
+        .collect::<Vec<_>>()
+        .chunks(4)
+        .map(|chunk| chunk.iter().collect::<String>())
+        .collect::<Vec<_>>()
+        .join("  ");
+
+    format!(
+        "{}\n63                      47                  32\n\n{}\n31                      15                  0",
+        upper_formatted, lower_formatted
+    )
+}
+
 fn main() -> rustyline::Result<()> {
     // Check if running interactively
     let is_interactive = atty::is(atty::Stream::Stdin);
@@ -38,9 +69,11 @@ fn main() -> rustyline::Result<()> {
         }
 
         match evaluate_command(input, &context, last_result) {
-            Ok(result) => {
+            Ok((result, num_value)) => {
                 println!("{}", result);
-                if let Some(num) = parse_result_number(&result) {
+                if let Some(num) = num_value {
+                    // Always show 64-bit binary representation
+                    println!("\n{}", format_binary_64bit(num as i64));
                     last_result = Some(num);
                     context.var("ans", num);
                 }
@@ -59,7 +92,7 @@ fn main() -> rustyline::Result<()> {
     Ok(())
 }
 
-fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) -> Result<String, String> {
+fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) -> Result<(String, Option<f64>), String> {
     let lower = input.to_lowercase();
 
     // Replace 'ans' with last result in expression
@@ -79,7 +112,7 @@ fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) ->
             .map_err(|e| format!("Failed to evaluate expression: {}", e))? as i64;
 
         // Convert the result to the requested format
-        return convert_result(result, &format_part);
+        return convert_result(result, &format_part).map(|s| (s, Some(result as f64)));
     }
 
     // Pre-process all operators including bitwise
@@ -481,13 +514,19 @@ fn is_operator_char(c: char) -> bool {
     matches!(c, '+' | '-' | '*' | '/' | '%' | '^' | '<' | '>' | '=' | '!' | '~' | '|' | '&')
 }
 
-fn eval_expr_with_context(expr: &str, context: &Context) -> Result<String, String> {
+fn eval_expr_with_context(expr: &str, context: &Context) -> Result<(String, Option<f64>), String> {
     match eval_str_with_context(expr, context) {
-        Ok(result) => format_result(result),
+        Ok(result) => {
+            let formatted = format_result(result)?;
+            Ok((formatted, Some(result)))
+        }
         Err(_) => {
             // Try fallback without context (for expressions that might work with built-ins only)
             match eval_str(expr) {
-                Ok(result) => format_result(result),
+                Ok(result) => {
+                    let formatted = format_result(result)?;
+                    Ok((formatted, Some(result)))
+                }
                 Err(e) => Err(format!("{}", e)),
             }
         }
