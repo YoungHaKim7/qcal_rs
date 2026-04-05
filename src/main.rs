@@ -1,6 +1,6 @@
-use meval::{eval_str, eval_str_with_context, Context};
-use rustyline::DefaultEditor;
+use meval::{Context, eval_str, eval_str_with_context};
 use qalculate::fprice;
+use rustyline::DefaultEditor;
 
 fn format_binary_64bit(value: i64) -> String {
     // Get 64-bit binary representation
@@ -28,7 +28,7 @@ fn format_binary_64bit(value: i64) -> String {
         .join("  ");
 
     format!(
-        "{}\n63                      47                  32\n\n{}\n31                      15                  0",
+        "{}\n63                      47                  32\n\n{}\n31                      15                   0",
         upper_formatted, lower_formatted
     )
 }
@@ -92,7 +92,11 @@ fn main() -> rustyline::Result<()> {
     Ok(())
 }
 
-fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) -> Result<(String, Option<f64>), String> {
+fn evaluate_command(
+    input: &str,
+    context: &Context,
+    last_result: Option<f64>,
+) -> Result<(String, Option<f64>), String> {
     let lower = input.to_lowercase();
 
     // Replace 'ans' with last result in expression
@@ -109,7 +113,8 @@ fn evaluate_command(input: &str, context: &Context, last_result: Option<f64>) ->
 
         // Evaluate the expression
         let result: i64 = eval_str(&processed_expr)
-            .map_err(|e| format!("Failed to evaluate expression: {}", e))? as i64;
+            .map_err(|e| format!("Failed to evaluate expression: {}", e))?
+            as i64;
 
         // Convert the result to the requested format
         return convert_result(result, &format_part).map(|s| (s, Some(result as f64)));
@@ -158,7 +163,11 @@ fn convert_result(value: i64, format: &str) -> Result<String, String> {
         }
         "bin8" => {
             // 8-bit binary output with space in the middle
-            Ok(format!("{:04b} {:04b}", (value as u8 >> 4) & 0xF, value as u8 & 0xF))
+            Ok(format!(
+                "{:04b} {:04b}",
+                (value as u8 >> 4) & 0xF,
+                value as u8 & 0xF
+            ))
         }
         "octal" | "oct" => Ok(format!("0o{:o}", value)),
         _ => Err(format!("Unknown conversion target: {}", format)),
@@ -511,7 +520,10 @@ fn find_operand_end(s: &str, op_start: usize) -> usize {
 }
 
 fn is_operator_char(c: char) -> bool {
-    matches!(c, '+' | '-' | '*' | '/' | '%' | '^' | '<' | '>' | '=' | '!' | '~' | '|' | '&')
+    matches!(
+        c,
+        '+' | '-' | '*' | '/' | '%' | '^' | '<' | '>' | '=' | '!' | '~' | '|' | '&'
+    )
 }
 
 fn eval_expr_with_context(expr: &str, context: &Context) -> Result<(String, Option<f64>), String> {
