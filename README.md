@@ -1,3 +1,25 @@
+<h1 align="center">tcal_rs(Terminal Calculator(rust))</h1>
+<br />
+
+<div align="center">
+  <!-- Crates version -->
+  <a href="https://crates.io/crates/tcal_rs">
+    <img src="https://img.shields.io/crates/v/justrs.svg?style=flat-square"
+    alt="Crates.io version" />
+  </a>
+  <!-- Downloads -->
+  <a href="https://crates.io/crates/tcal_rs">
+    <img src="https://img.shields.io/crates/d/tcal_rs.svg?style=flat-square"
+      alt="Download" />
+  </a>
+  <!-- docs.rs docs -->
+  <a href="https://docs.rs/tcal_rs">
+    <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square"
+      alt="docs.rs docs" />
+  </a>
+</div>
+<br/>
+
 # tcal_rs
 - Converting C++ Code to Rust Code 
   - https://github.com/Qalculate/libqalculate
