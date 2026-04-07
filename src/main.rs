@@ -518,6 +518,21 @@ fn parse_result_number(result: &str) -> Option<f64> {
     num_str.parse().ok()
 }
 
+/// Strip prefixes (0x, 0b, 0o) from formatted result strings and return only the number part.
+/// Also removes spaces from binary representations.
+
+// fn print_val(x: Result<String, String>) -> String {
+//     let raw_data = x.unwrap_or_else(|e| e);
+//     let raw_data_len = &raw_data.len() - 1;
+
+//     let result_data = &raw_data[1..raw_data_len];
+//     result_data.to_string()
+// }
+
+fn print_val(x: Result<String, String>) -> String {
+    x.unwrap_or_else(|e| e)
+}
+
 fn main() -> rustyline::Result<()> {
     // Check if running interactively
     let is_interactive = atty::is(atty::Stream::Stdin);
@@ -560,8 +575,8 @@ fn main() -> rustyline::Result<()> {
                     // Always show 64-bit binary representation
                     println!(
                         "\n\nHEX : {:?}\nBIN : {:?}\n{}\n\n",
-                        convert_result(num as i64, "hex"),
-                        convert_result(num as i64, "bin"),
+                        print_val(convert_result(num as i64, "hex")),
+                        print_val(convert_result(num as i64, "bin")),
                         format_binary_64bit(num as i64)
                     );
                     last_result = Some(num);
