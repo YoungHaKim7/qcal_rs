@@ -13,15 +13,21 @@ categories = ["mathematics", "algorithms"]
 [dependencies]
 atty = "0.2"
 meval = "0.2"
-rug = "1.24"
 rustyline = "15"
+
+# Uncomment if you need the full library (won't build on macOS M1 without fixes)
+# rug = "1.24"
+
+# [[bin]]
+# name = "tcal_rs"
+# path = "src/main.rs"
 
 [dev-dependencies]
 criterion = "0.5"
 
-[lib]
-name = "tcalulator_rs"
-path = "src/lib.rs"
+# [lib]
+# name = "tcalulator_rs"
+# path = "src/lib.rs"
 
 [profile.release]
 opt-level = 3

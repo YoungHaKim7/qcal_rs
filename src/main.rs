@@ -1,6 +1,8 @@
 use meval::{Context, eval_str, eval_str_with_context};
 use rustyline::DefaultEditor;
-use tcalulator_rs::fprice;
+
+mod fprice_standalone;
+use fprice_standalone::fprice;
 
 fn format_binary_64bit(value: i64) -> String {
     // Get 64-bit binary representation
@@ -570,7 +572,7 @@ fn main() -> rustyline::Result<()> {
 
         match evaluate_command(input, &context, last_result) {
             Ok((result, num_value)) => {
-                println!("{}", result);
+                println!("\t\t{}", result);
                 if let Some(num) = num_value {
                     // Always show 64-bit binary representation
                     println!(
