@@ -542,7 +542,7 @@ fn main() -> rustyline::Result<()> {
     if is_interactive {
         println!("Qalculate CLI - Interactive Calculator");
         println!("Type 'exit' or 'quit' to exit\n");
-        println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.");
+        println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.\n");
     }
 
     let mut context = Context::new();
@@ -576,8 +576,9 @@ fn main() -> rustyline::Result<()> {
                 if let Some(num) = num_value {
                     // Always show 64-bit binary representation
                     println!(
-                        "\n\nHEX : {:?}\nBIN : {:?}\n{}\n\n",
+                        "\t ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHEX : {:?}\nDEC : {:?}\nBIN : {:?}\n{}\n\n",
                         print_val(convert_result(num as i64, "hex")),
+                        result,
                         print_val(convert_result(num as i64, "bin")),
                         format_binary_64bit(num as i64)
                     );
