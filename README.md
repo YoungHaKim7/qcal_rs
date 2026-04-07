@@ -24,6 +24,25 @@
 - Converting C++ Code to Rust Code 
   - https://github.com/Qalculate/libqalculate
 
+# Install
+
+```bash
+$ git clone https://github.com/YoungHaKim7/tcal_rs
+
+$ cd justrs
+ 
+$ cargo install --path .
+```
+
+- `cargo install`
+
+```bash
+$ cargo install tcal_rs
+
+# or (nightly ver)
+$ cargo install --git https://github.com/YoungHaKim7/tcal_rs.git
+```
+
 # `tcal_rs`
 
 ```bash
