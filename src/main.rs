@@ -40,6 +40,42 @@ fn evaluate_command(
     context: &Context,
     last_result: Option<f64>,
 ) -> Result<(String, Option<f64>), String> {
+    // Check for conversion suffix using original input (to preserve case in string literals)
+    if let Some((expr_part, format_part)) = extract_conversion(input) {
+        let format_lower = format_part.to_lowercase();
+
+        // Check if this is a string-to-unicode conversion
+        if format_lower == "unicode" || format_lower == "uni" {
+            // Check if the expression part is a string literal
+            if extract_string_literal(&expr_part).is_some()
+                || expr_part.starts_with('"')
+                || expr_part.starts_with('\'')
+            {
+                return convert_to_unicode(&expr_part).map(|s| (s, None));
+            }
+        }
+
+        // For non-string conversions, process the expression
+        let lower_expr = expr_part.to_lowercase();
+        let expr_with_ans = if let Some(ans) = last_result {
+            lower_expr.replace("ans", &ans.to_string())
+        } else {
+            lower_expr
+        };
+
+        // Process the expression (binary conversion + bitwise ops)
+        let processed_expr = preprocess_operators(&expr_with_ans)?;
+
+        // Evaluate the expression
+        let result: i64 = eval_str(&processed_expr)
+            .map_err(|e| format!("Failed to evaluate expression: {}", e))?
+            as i64;
+
+        // Convert the result to the requested format
+        return convert_result(result, &format_lower).map(|s| (s, Some(result as f64)));
+    }
+
+    // No conversion suffix - process as regular expression
     let lower = input.to_lowercase();
 
     // Replace 'ans' with last result in expression
@@ -48,20 +84,6 @@ fn evaluate_command(
     } else {
         lower.clone()
     };
-
-    // Check for conversion suffix: "<expression> to <format>"
-    if let Some((expr_part, format_part)) = extract_conversion(&expr) {
-        // Process the expression (binary conversion + bitwise ops)
-        let processed_expr = preprocess_operators(&expr_part)?;
-
-        // Evaluate the expression
-        let result: i64 = eval_str(&processed_expr)
-            .map_err(|e| format!("Failed to evaluate expression: {}", e))?
-            as i64;
-
-        // Convert the result to the requested format
-        return convert_result(result, &format_part).map(|s| (s, Some(result as f64)));
-    }
 
     // Pre-process all operators including bitwise
     let expr = preprocess_operators(&expr)?;
@@ -77,6 +99,51 @@ fn extract_conversion(input: &str) -> Option<(String, String)> {
         return Some((expr_part, format_part));
     }
     None
+}
+
+/// Extract a string literal from input, handling both single and double quotes
+/// Returns None if input is not a valid string literal
+fn extract_string_literal(input: &str) -> Option<String> {
+    let trimmed = input.trim();
+
+    // Check for double-quoted string
+    if trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() >= 2 {
+        let content = &trimmed[1..trimmed.len() - 1];
+        return Some(content.to_string());
+    }
+
+    // Check for single-quoted string
+    if trimmed.starts_with('\'') && trimmed.ends_with('\'') && trimmed.len() >= 2 {
+        let content = &trimmed[1..trimmed.len() - 1];
+        return Some(content.to_string());
+    }
+
+    None
+}
+
+/// Convert string to Unicode code points
+fn convert_to_unicode(input: &str) -> Result<String, String> {
+    let content = if let Some(s) = extract_string_literal(input) {
+        s
+    } else {
+        // If not quoted, treat the entire input as the string content
+        input.trim().to_string()
+    };
+
+    if content.is_empty() {
+        return Ok("Empty string".to_string());
+    }
+
+    // Convert each character to its Unicode code point
+    let results: Vec<String> = content
+        .chars()
+        .map(|c| {
+            let code_point = c as u32;
+            format!("'{}' → U+{:04X} ({})", c, code_point, code_point)
+        })
+        .collect();
+
+    Ok(results.join(", \n\t"))
 }
 
 fn convert_result(value: i64, format: &str) -> Result<String, String> {
@@ -113,6 +180,21 @@ fn convert_result(value: i64, format: &str) -> Result<String, String> {
             ))
         }
         "octal" | "oct" => Ok(format!("0o{:o}", value)),
+        "unicode" | "uni" => {
+            // Convert a number to Unicode character
+            if value >= 0 && value <= 0x10FFFF {
+                if let Some(c) = char::from_u32(value as u32) {
+                    Ok(format!("U+{:04X} → '{}'", value, c))
+                } else {
+                    Ok(format!("U+{:04X} (invalid Unicode code point)", value))
+                }
+            } else {
+                Err(format!(
+                    "Unicode code point out of range (0-0x10FFFF): {}",
+                    value
+                ))
+            }
+        }
         _ => Err(format!("Unknown conversion target: {}", format)),
     }
 }
@@ -646,7 +728,7 @@ fn main() -> rustyline::Result<()> {
     if is_interactive {
         println!("Qalculate CLI - Interactive Calculator");
         println!("Type 'exit' or 'quit' to exit\n");
-        println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.\n");
+        println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, \"안\" to unicode, etc.\n");
     }
 
     let mut context = Context::new();
@@ -676,11 +758,11 @@ fn main() -> rustyline::Result<()> {
 
         match evaluate_command(input, &context, last_result) {
             Ok((result, num_value)) => {
-                println!("\t\t{}", result);
+                println!("\t{}", result);
                 if let Some(num) = num_value {
                     // Always show 64-bit binary representation
                     println!(
-                        "\t ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHEX : {:?}\nDEC : {:?}\nOCT : {:?}\nBIN : {:?}\n{}\n\n",
+                        "   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHEX : {:?}\nDEC : {:?}\nOCT : {:?}\nBIN : {:?}\n{}\n\n",
                         print_val(convert_result(num as i64, "hex")),
                         result,
                         print_val(convert_result(num as i64, "oct")),

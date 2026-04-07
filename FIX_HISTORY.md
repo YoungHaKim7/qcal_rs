@@ -317,3 +317,45 @@ rm -rf target && GMP_MPFR_SYS_CACHE="$HOME/.cargo/libgmp_cache" cargo build --re
 ✅ **Mixed expressions**: `0xff + 0o10 + 0b1` = 255 + 8 + 1 = 264
 
 The calculator now accepts hexadecimal (`0x...`), octal (`0o...`), and binary (`0b...`) literals in input expressions, converts them to decimal for evaluation, and displays results in all formats.
+
+# add Unicode
+
+Excellent! Unicode conversion has been successfully added to your calculator. Here's what's now supported:
+
+## New Unicode Features:
+
+### 1. **String to Unicode Code Point**
+```bash
+> "안" to unicode
+'안' → U+C548 (50504)
+
+> "A" to unicode
+'A' → U+0041 (65)
+
+> "Hello" to unicode
+'H' → U+0048 (72), 'e' → U+0065 (101), 'l' → U+006C (108), 'l' → U+006C (108), 'o' → U+006F (111)
+
+> "🎉" to unicode
+'🎉' → U+1F389 (127881)
+```
+
+### 2. **Number to Unicode Character**
+```bash
+> 65 to unicode
+U+0041 → 'A'
+
+> 50504 to unicode
+U+C548 → '안'
+```
+
+### 3. **Case-Insensitive Format Specifier**
+You can use `unicode`, `UNICODE`, `uni`, or `UNI` - all work the same.
+
+### Key Features:
+- ✅ Preserves original case in string literals (no more lowercasing issues)
+- ✅ Handles multi-byte UTF-8 characters correctly (Korean, emoji, etc.)
+- ✅ Supports multiple characters in one string
+- ✅ Works bidirectionally (string→codepoint and codepoint→character)
+- ✅ Compatible with all existing calculator features
+
+The original panic has been fixed by properly handling UTF-8 string boundaries and avoiding byte indexing on multibyte characters.
