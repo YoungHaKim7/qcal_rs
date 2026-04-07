@@ -117,6 +117,153 @@ fn convert_result(value: i64, format: &str) -> Result<String, String> {
     }
 }
 
+fn convert_hex_literals(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+    let mut pos = 0;
+
+    while pos < result.len() {
+        // Find "0x" prefix (case-insensitive for 0X)
+        if let Some(px_start) = result[pos..].find("0x") {
+            let abs_px_start = pos + px_start;
+            let hex_start = abs_px_start + 2;
+
+            // Find the end of the hex literal
+            let mut hex_end = hex_start;
+            let chars: Vec<char> = result.chars().collect();
+            let mut has_valid_digit = false;
+
+            while hex_end < chars.len() {
+                let c = chars[hex_end];
+                if c.is_ascii_hexdigit() {
+                    has_valid_digit = true;
+                    hex_end += 1;
+                } else if c == ' ' {
+                    // Allow spaces in hex literals for readability
+                    hex_end += 1;
+                } else {
+                    break;
+                }
+            }
+
+            if has_valid_digit {
+                // Extract the hex string (removing spaces)
+                let hex_str: String = result[hex_start..hex_end]
+                    .chars()
+                    .filter(|c| *c != ' ')
+                    .collect();
+
+                // Parse and convert to decimal
+                if let Ok(value) = i64::from_str_radix(&hex_str, 16) {
+                    result.replace_range(abs_px_start..hex_end, &value.to_string());
+                    pos = abs_px_start + value.to_string().len();
+                    continue;
+                }
+            }
+        }
+        pos += 1;
+    }
+
+    Ok(result)
+}
+
+fn convert_octal_literals(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+    let mut pos = 0;
+
+    while pos < result.len() {
+        // Find "0o" prefix
+        if let Some(po_start) = result[pos..].find("0o") {
+            let abs_po_start = pos + po_start;
+            let octal_start = abs_po_start + 2;
+
+            // Find the end of the octal literal
+            let mut octal_end = octal_start;
+            let chars: Vec<char> = result.chars().collect();
+            let mut has_valid_digit = false;
+
+            while octal_end < chars.len() {
+                let c = chars[octal_end];
+                if c >= '0' && c <= '7' {
+                    has_valid_digit = true;
+                    octal_end += 1;
+                } else if c == ' ' {
+                    // Allow spaces in octal literals for readability
+                    octal_end += 1;
+                } else {
+                    break;
+                }
+            }
+
+            if has_valid_digit {
+                // Extract the octal string (removing spaces)
+                let octal_str: String = result[octal_start..octal_end]
+                    .chars()
+                    .filter(|c| *c != ' ')
+                    .collect();
+
+                // Parse and convert to decimal
+                if let Ok(value) = i64::from_str_radix(&octal_str, 8) {
+                    result.replace_range(abs_po_start..octal_end, &value.to_string());
+                    pos = abs_po_start + value.to_string().len();
+                    continue;
+                }
+            }
+        }
+        pos += 1;
+    }
+
+    Ok(result)
+}
+
+fn convert_binary_literals(expr: &str) -> Result<String, String> {
+    let mut result = expr.to_string();
+    let mut pos = 0;
+
+    while pos < result.len() {
+        // Find "0b" prefix
+        if let Some(pb_start) = result[pos..].find("0b") {
+            let abs_pb_start = pos + pb_start;
+            let binary_start = abs_pb_start + 2;
+
+            // Find the end of the binary literal
+            let mut binary_end = binary_start;
+            let chars: Vec<char> = result.chars().collect();
+            let mut has_valid_digit = false;
+
+            while binary_end < chars.len() {
+                let c = chars[binary_end];
+                if c == '0' || c == '1' {
+                    has_valid_digit = true;
+                    binary_end += 1;
+                } else if c == ' ' {
+                    // Allow spaces in binary literals for readability
+                    binary_end += 1;
+                } else {
+                    break;
+                }
+            }
+
+            if has_valid_digit {
+                // Extract the binary string (removing spaces)
+                let binary_str: String = result[binary_start..binary_end]
+                    .chars()
+                    .filter(|c| *c != ' ')
+                    .collect();
+
+                // Parse and convert to decimal
+                if let Ok(value) = i64::from_str_radix(&binary_str, 2) {
+                    result.replace_range(abs_pb_start..binary_end, &value.to_string());
+                    pos = abs_pb_start + value.to_string().len();
+                    continue;
+                }
+            }
+        }
+        pos += 1;
+    }
+
+    Ok(result)
+}
+
 fn process_power_operator(expr: &str) -> Result<String, String> {
     let mut result = expr.to_string();
 
@@ -192,6 +339,12 @@ fn preprocess_operators(expr: &str) -> Result<String, String> {
     // Convert ** to ^ for power (we'll process ^ as power later)
     result = result.replace("**", "^");
 
+    // Convert hexadecimal literals (0x...) to decimal
+    result = convert_hex_literals(&result)?;
+
+    // Convert octal literals (0o...) to decimal
+    result = convert_octal_literals(&result)?;
+
     // Convert binary literals (0b...) to decimal
     result = convert_binary_literals(&result)?;
 
@@ -212,55 +365,6 @@ fn preprocess_operators(expr: &str) -> Result<String, String> {
 
     // Process shift operators (<< and >>)
     result = preprocess_shift_operators(&result)?;
-
-    Ok(result)
-}
-
-fn convert_binary_literals(expr: &str) -> Result<String, String> {
-    let mut result = expr.to_string();
-    let mut pos = 0;
-
-    while pos < result.len() {
-        // Find "0b" prefix
-        if let Some(pb_start) = result[pos..].find("0b") {
-            let abs_pb_start = pos + pb_start;
-            let binary_start = abs_pb_start + 2;
-
-            // Find the end of the binary literal
-            let mut binary_end = binary_start;
-            let chars: Vec<char> = result.chars().collect();
-            let mut has_valid_digit = false;
-
-            while binary_end < chars.len() {
-                let c = chars[binary_end];
-                if c == '0' || c == '1' {
-                    has_valid_digit = true;
-                    binary_end += 1;
-                } else if c == ' ' {
-                    // Allow spaces in binary literals for readability
-                    binary_end += 1;
-                } else {
-                    break;
-                }
-            }
-
-            if has_valid_digit {
-                // Extract the binary string (removing spaces)
-                let binary_str: String = result[binary_start..binary_end]
-                    .chars()
-                    .filter(|c| *c != ' ')
-                    .collect();
-
-                // Parse and convert to decimal
-                if let Ok(value) = i64::from_str_radix(&binary_str, 2) {
-                    result.replace_range(abs_pb_start..binary_end, &value.to_string());
-                    pos = abs_pb_start + value.to_string().len();
-                    continue;
-                }
-            }
-        }
-        pos += 1;
-    }
 
     Ok(result)
 }

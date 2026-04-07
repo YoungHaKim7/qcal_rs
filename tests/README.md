@@ -1,3 +1,15 @@
+# test(echo)
+
+```bash
+echo "0x1f3dc" | ./target/debug/tcal_rs)
+  ⎿             127,964
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     HEX : "0x1F3DC"
+     … +8 lines (ctrl+o to expand)
+
+
+⏺ Bash(echo "0o755" | ./target/debug/tcal_rs)  
+```
 # test
 The Makefile is now working. Here's a summary:
 

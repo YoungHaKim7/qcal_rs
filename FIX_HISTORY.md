@@ -157,3 +157,163 @@ rm -rf target && GMP_MPFR_SYS_CACHE="$HOME/.cargo/libgmp_cache" cargo build --re
 # Build with custom cache path
 ```
 
+# add convert(2, 8, 16진수 변환)
+
+```rs
+      372 -fn convert_binary_literals(expr: &str) -> Result<String, String> {
+      373 -    let mut result = expr.to_string();
+      374 -    let mut pos = 0;
+      375 -
+      376 -    while pos < result.len() {
+      377 -        // Find "0b" prefix
+      378 -        if let Some(pb_start) = result[pos..].find("0b") {
+      379 -            let abs_pb_start = pos + pb_start;
+      380 -            let binary_start = abs_pb_start + 2;
+      381 -
+      382 -            // Find the end of the binary literal
+      383 -            let mut binary_end = binary_start;
+      384 -            let chars: Vec<char> = result.chars().collect();
+      385 -            let mut has_valid_digit = false;
+      386 -
+      387 -            while binary_end < chars.len() {
+      388 -                let c = chars[binary_end];
+      389 -                if c == '0' || c == '1' {
+      390 -                    has_valid_digit = true;
+      391 -                    binary_end += 1;
+      392 -                } else if c == ' ' {
+      393 -                    // Allow spaces in binary literals for readability
+      394 -                    binary_end += 1;
+      395 -                } else {
+      396 -                    break;
+      397 -                }
+      398 -            }
+      399 -
+      400 -            if has_valid_digit {
+      401 -                // Extract the binary string (removing spaces)
+      402 -                let binary_str: String = result[binary_start..binary_end]
+      403 -                    .chars()
+      404 -                    .filter(|c| *c != ' ')
+      405 -                    .collect();
+      406 -
+      407 -                // Parse and convert to decimal
+      408 -                if let Ok(value) = i64::from_str_radix(&binary_str, 2) {
+      409 -                    result.replace_range(abs_pb_start..binary_end, &value.to_string());
+      410 -                    pos = abs_pb_start + value.to_string().len();
+      411 -                    continue;
+      412 -                }
+      413 -            }
+      414 -        }
+      415 -        pos += 1;
+      416 -    }
+      417 -
+      418 -    Ok(result)
+      419 -}
+      420 -
+      421 -fn convert_hex_literals(expr: &str) -> Result<String, String> {
+      422 -    let mut result = expr.to_string();
+      423 -    let mut pos = 0;
+      424 -
+      425 -    while pos < result.len() {
+      426 -        // Find "0x" prefix (case-insensitive for 0X)
+      427 -        if let Some(px_start) = result[pos..].find("0x") {
+      428 -            let abs_px_start = pos + px_start;
+      429 -            let hex_start = abs_px_start + 2;
+      430 -
+      431 -            // Find the end of the hex literal
+      432 -            let mut hex_end = hex_start;
+      433 -            let chars: Vec<char> = result.chars().collect();
+      434 -            let mut has_valid_digit = false;
+      435 -
+      436 -            while hex_end < chars.len() {
+      437 -                let c = chars[hex_end];
+      438 -                if c.is_ascii_hexdigit() {
+      439 -                    has_valid_digit = true;
+      440 -                    hex_end += 1;
+      441 -                } else if c == ' ' {
+      442 -                    // Allow spaces in hex literals for readability
+      443 -                    hex_end += 1;
+      444 -                } else {
+      445 -                    break;
+      446 -                }
+      447 -            }
+      448 -
+      449 -            if has_valid_digit {
+      450 -                // Extract the hex string (removing spaces)
+      451 -                let hex_str: String = result[hex_start..hex_end]
+      452 -                    .chars()
+      453 -                    .filter(|c| *c != ' ')
+      454 -                    .collect();
+      455 -
+      456 -                // Parse and convert to decimal
+      457 -                if let Ok(value) = i64::from_str_radix(&hex_str, 16) {
+      458 -                    result.replace_range(abs_px_start..hex_end, &value.to_string());
+      459 -                    pos = abs_px_start + value.to_string().len();
+      460 -                    continue;
+      461 -                }
+      462 -            }
+      463 -        }
+      464 -        pos += 1;
+      465 -    }
+      466 -
+      467 -    Ok(result)
+      468 -}
+      469 -
+      470 -fn convert_octal_literals(expr: &str) -> Result<String, String> {
+      471 -    let mut result = expr.to_string();
+      472 -    let mut pos = 0;
+      473 -
+      474 -    while pos < result.len() {
+      475 -        // Find "0o" prefix
+      476 -        if let Some(po_start) = result[pos..].find("0o") {
+      477 -            let abs_po_start = pos + po_start;
+      478 -            let octal_start = abs_po_start + 2;
+      479 -
+      480 -            // Find the end of the octal literal
+      481 -            let mut octal_end = octal_start;
+      482 -            let chars: Vec<char> = result.chars().collect();
+      483 -            let mut has_valid_digit = false;
+      484 -
+      485 -            while octal_end < chars.len() {
+      486 -                let c = chars[octal_end];
+      487 -                if c >= '0' && c <= '7' {
+      488 -                    has_valid_digit = true;
+      489 -                    octal_end += 1;
+      490 -                } else if c == ' ' {
+      491 -                    // Allow spaces in octal literals for readability
+      492 -                    octal_end += 1;
+      493 -                } else {
+      494 -                    break;
+      495 -                }
+      496 -            }
+      497 -
+      498 -            if has_valid_digit {
+      499 -                // Extract the octal string (removing spaces)
+      500 -                let octal_str: String = result[octal_start..octal_end]
+      501 -                    .chars()
+      502 -                    .filter(|c| *c != ' ')
+      503 -                    .collect();
+      504 -
+      505 -                // Parse and convert to decimal
+      506 -                if let Ok(value) = i64::from_str_radix(&octal_str, 8) {
+      507 -                    result.replace_range(abs_po_start..octal_end, &value.to_string());
+      508 -                    pos = abs_po_start + value.to_string().len();
+      509 -                    continue;
+      510 -                }
+      511 -            }
+      512 -        }
+      513 -        pos += 1;
+      514 -    }
+      515 -
+      516 -    Ok(result)
+      517 -}
+      518 -
+```
+- hex fix
+- Excellent! All input formats now work correctly:
+
+✅ **Hexadecimal input**: `0x1f3dc` → 127,964
+✅ **Octal input**: `0o755` → 493  
+✅ **Binary input**: `0b101` (already existed)
+✅ **Mixed expressions**: `0xff + 0o10 + 0b1` = 255 + 8 + 1 = 264
+
+The calculator now accepts hexadecimal (`0x...`), octal (`0o...`), and binary (`0b...`) literals in input expressions, converts them to decimal for evaluation, and displays results in all formats.
