@@ -20,7 +20,7 @@ rustyline = "15"
 criterion = "0.5"
 
 [lib]
-name = "qalculate"
+name = "tcalulator_rs"
 path = "src/lib.rs"
 
 [profile.release]

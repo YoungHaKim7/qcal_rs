@@ -1,6 +1,6 @@
 use meval::{Context, eval_str, eval_str_with_context};
-use qalculate::fprice;
 use rustyline::DefaultEditor;
+use tcalulator_rs::fprice;
 
 fn format_binary_64bit(value: i64) -> String {
     // Get 64-bit binary representation
@@ -31,65 +31,6 @@ fn format_binary_64bit(value: i64) -> String {
         "{}\n63                      47                  32\n\n{}\n31                      15                   0",
         upper_formatted, lower_formatted
     )
-}
-
-fn main() -> rustyline::Result<()> {
-    // Check if running interactively
-    let is_interactive = atty::is(atty::Stream::Stdin);
-
-    if is_interactive {
-        println!("Qalculate CLI - Interactive Calculator");
-        println!("Type 'exit' or 'quit' to exit\n");
-        println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.");
-    }
-
-    let mut context = Context::new();
-    let mut last_result: Option<f64> = None;
-    let mut rl = DefaultEditor::new()?;
-
-    // Add common constants
-    context.var("pi", std::f64::consts::PI);
-    context.var("e", std::f64::consts::E);
-
-    loop {
-        let input = rl.readline("> ");
-        let input = match input {
-            Ok(line) => line,
-            Err(_) => break,
-        };
-        let input = input.trim();
-
-        if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
-            println!("Goodbye!");
-            break;
-        }
-
-        if input.is_empty() {
-            continue;
-        }
-
-        match evaluate_command(input, &context, last_result) {
-            Ok((result, num_value)) => {
-                println!("{}", result);
-                if let Some(num) = num_value {
-                    // Always show 64-bit binary representation
-                    println!("\n{}", format_binary_64bit(num as i64));
-                    last_result = Some(num);
-                    context.var("ans", num);
-                }
-            }
-            Err(e) => {
-                eprintln!("Error: {}", e);
-            }
-        }
-
-        // Add non-empty input to history
-        if !input.is_empty() {
-            let _ = rl.add_history_entry(input);
-        }
-    }
-
-    Ok(())
 }
 
 fn evaluate_command(
@@ -575,4 +516,68 @@ fn parse_result_number(result: &str) -> Option<f64> {
         .unwrap_or(result);
 
     num_str.parse().ok()
+}
+
+fn main() -> rustyline::Result<()> {
+    // Check if running interactively
+    let is_interactive = atty::is(atty::Stream::Stdin);
+
+    if is_interactive {
+        println!("Qalculate CLI - Interactive Calculator");
+        println!("Type 'exit' or 'quit' to exit\n");
+        println!("Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.");
+    }
+
+    let mut context = Context::new();
+    let mut last_result: Option<f64> = None;
+    let mut rl = DefaultEditor::new()?;
+
+    // Add common constants
+    context.var("pi", std::f64::consts::PI);
+    context.var("e", std::f64::consts::E);
+
+    loop {
+        let input = rl.readline("> ");
+        let input = match input {
+            Ok(line) => line,
+            Err(_) => break,
+        };
+        let input = input.trim();
+
+        if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
+            println!("Goodbye!");
+            break;
+        }
+
+        if input.is_empty() {
+            continue;
+        }
+
+        match evaluate_command(input, &context, last_result) {
+            Ok((result, num_value)) => {
+                println!("{}", result);
+                if let Some(num) = num_value {
+                    // Always show 64-bit binary representation
+                    println!(
+                        "\n\nHEX : {:?}\nBIN : {:?}\n{}\n\n",
+                        convert_result(num as i64, "hex"),
+                        convert_result(num as i64, "bin"),
+                        format_binary_64bit(num as i64)
+                    );
+                    last_result = Some(num);
+                    context.var("ans", num);
+                }
+            }
+            Err(e) => {
+                eprintln!("Error: {}", e);
+            }
+        }
+
+        // Add non-empty input to history
+        if !input.is_empty() {
+            let _ = rl.add_history_entry(input);
+        }
+    }
+
+    Ok(())
 }

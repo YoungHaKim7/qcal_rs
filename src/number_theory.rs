@@ -18,15 +18,17 @@ pub use self::parity::{is_even, is_odd};
 pub use self::primes::{
     bernoulli, is_prime, next_prime, nth_prime, prev_prime, prime_count, primes_up_to,
 };
-pub use self::rounding::{abs, abs_integer, ceil, floor, round, signum, signum_integer, trunc, RoundingMode};
-pub use self::traits::{Divisors, Gcd, Lcm};
+pub use self::rounding::{
+    RoundingMode, abs, abs_integer, ceil, floor, round, signum, signum_integer, trunc,
+};
 pub use self::totient::totient;
+pub use self::traits::{Divisors, Gcd, Lcm};
 
 pub mod parity;
 pub mod primes;
 pub mod rounding;
-pub mod traits;
 pub mod totient;
+pub mod traits;
 
 /// Computes the greatest common divisor of two or more integers.
 ///
@@ -41,7 +43,7 @@ pub mod totient;
 /// # Examples
 ///
 /// ```
-/// use qalculate::gcd;
+/// use tcalulator_rs::gcd;
 /// use rug::Integer;
 ///
 /// let a = Integer::from(48);
@@ -77,7 +79,7 @@ pub fn gcd(values: &[&Integer]) -> Integer {
 /// # Examples
 ///
 /// ```
-/// use qalculate::lcm;
+/// use tcalulator_rs::lcm;
 /// use rug::Integer;
 ///
 /// let a = Integer::from(21);
@@ -113,7 +115,7 @@ pub fn lcm(values: &[&Integer]) -> Integer {
 /// # Examples
 ///
 /// ```
-/// use qalculate::frac;
+/// use tcalulator_rs::frac;
 ///
 /// let (num, den) = frac(7, 4);
 /// assert_eq!(num, 3);
@@ -142,7 +144,7 @@ pub fn frac(numerator: i64, denominator: i64) -> (i64, i64) {
 /// # Examples
 ///
 /// ```
-/// use qalculate::rem;
+/// use tcalulator_rs::rem;
 ///
 /// assert_eq!(rem(7, 3), 1);
 /// assert_eq!(rem(-7, 3), -1);  // Different from mod!
@@ -168,7 +170,7 @@ pub fn rem(a: i64, b: i64) -> i64 {
 /// # Examples
 ///
 /// ```
-/// use qalculate::modulo;
+/// use tcalulator_rs::modulo;
 ///
 /// assert_eq!(modulo(7, 3), 1);
 /// assert_eq!(modulo(-7, 3), 2);  // Always non-negative
@@ -194,7 +196,7 @@ pub fn modulo(a: i64, b: i64) -> i64 {
 /// # Examples
 ///
 /// ```
-/// use qalculate::powmod;
+/// use tcalulator_rs::powmod;
 /// use rug::Integer;
 ///
 /// let result = powmod(
@@ -211,7 +213,10 @@ pub fn powmod(base: &Integer, exp: &Integer, modulus: &Integer) -> Integer {
             panic!("powmod with negative exponent requires gcd(base, modulus) == 1");
         }
         // Compute modular inverse first
-        let base_inv = base.clone().invert(modulus).expect("Modular inverse exists");
+        let base_inv = base
+            .clone()
+            .invert(modulus)
+            .expect("Modular inverse exists");
         let abs_exp = exp.clone().abs();
         return base_inv.pow_mod(&abs_exp, modulus).expect("Valid pow_mod");
     }
@@ -226,7 +231,7 @@ pub fn powmod(base: &Integer, exp: &Integer, modulus: &Integer) -> Integer {
 /// # Examples
 ///
 /// ```
-/// use qalculate::numerator;
+/// use tcalulator_rs::numerator;
 ///
 /// assert_eq!(numerator(7, 3), 7);
 /// assert_eq!(numerator(-7, 3), -7);
@@ -240,7 +245,7 @@ pub const fn numerator(numerator: i64, _denominator: i64) -> i64 {
 /// # Examples
 ///
 /// ```
-/// use qalculate::denominator;
+/// use tcalulator_rs::denominator;
 ///
 /// assert_eq!(denominator(7, 3), 3);
 /// assert_eq!(denominator(-7, 3), 3);
