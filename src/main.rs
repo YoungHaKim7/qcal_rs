@@ -576,9 +576,10 @@ fn main() -> rustyline::Result<()> {
                 if let Some(num) = num_value {
                     // Always show 64-bit binary representation
                     println!(
-                        "\t ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHEX : {:?}\nDEC : {:?}\nBIN : {:?}\n{}\n\n",
+                        "\t ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHEX : {:?}\nDEC : {:?}\nOCT : {:?}\nBIN : {:?}\n{}\n\n",
                         print_val(convert_result(num as i64, "hex")),
                         result,
+                        print_val(convert_result(num as i64, "oct")),
                         print_val(convert_result(num as i64, "bin")),
                         format_binary_64bit(num as i64)
                     );
