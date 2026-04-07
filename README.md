@@ -1,8 +1,8 @@
-# qcal_rs
+# tcal_rs
 - Converting C++ Code to Rust Code 
   - https://github.com/Qalculate/libqalculate
 
-# `qcal_rs`
+# `tcal_rs`
 
 ```bash
 $ cargo r --release
