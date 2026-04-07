@@ -1,4 +1,4 @@
-# Makefile for qcal_rs tests
+# Makefile for tcal_rs tests
 # Simple test runner for batch test files
 
 BATCH_FILES = $(wildcard *.batch)
