@@ -7,6 +7,7 @@ rust-version = "1.94"
 description = "Number theory functions library - Rust port of libqalculate number theory module"
 license = "GPL-2.0-or-later"
 repository = "https://github.com/YoungHaKim7/tcal_rs"
+documentation = "https://docs.rs/tcal_rs"
 keywords = ["math", "number-theory", "primes", "gcd", "lcm"]
 categories = ["mathematics", "algorithms"]
 
