@@ -4,7 +4,7 @@
 <div align="center">
   <!-- Crates version -->
   <a href="https://crates.io/crates/tcal_rs">
-    <img src="https://img.shields.io/crates/v/justrs.svg?style=flat-square"
+    <img src="https://img.shields.io/crates/v/tcal_rs.svg?style=flat-square"
     alt="Crates.io version" />
   </a>
   <!-- Downloads -->
