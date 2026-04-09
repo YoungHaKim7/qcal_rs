@@ -29,5 +29,8 @@ fn main() -> rustyline::Result<()> {
         rl.add_history_entry(input)?;
     }
 
+    // Save history
+    let _ = rl.save_history("history.txt");
+
     Ok(())
 }
