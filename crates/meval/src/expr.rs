@@ -6,7 +6,6 @@ use std::str::FromStr;
 
 type ContextHashMap<K, V> = FnvHashMap<K, V>;
 
-use Error;
 use extra_math::factorial;
 use shunting_yard::to_rpn;
 use std;

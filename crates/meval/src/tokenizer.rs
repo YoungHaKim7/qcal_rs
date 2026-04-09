@@ -5,7 +5,7 @@
 //! The parser should tokenize only well-formed expressions.
 //!
 //! [nom]: https://crates.io/crates/nom
-use nom::{IResult, Needed, multispace, slice_to_offsets};
+use nom::{IResult, Needed, error::ErrorKind::MultiSpace};
 use std;
 use std::fmt;
 use std::str::from_utf8;
@@ -116,8 +116,7 @@ named!(comma<Token>, chain!(tag!(","), || Token::Comma));
 /// Must start with a letter or an underscore, can be followed by letters, digits or underscores.
 fn ident(input: &[u8]) -> IResult<&[u8], &[u8]> {
     use nom::Err::*;
-    use nom::IResult::*;
-    use nom::{ErrorKind, Needed};
+    use nom::{Needed, error::ErrorKind};
 
     // first character must be 'a'...'z' | 'A'...'Z' | '_'
     match input.first().cloned() {
@@ -152,7 +151,7 @@ named!(
         map_res!(
             terminated!(
                 complete!(ident),
-                preceded!(opt!(multispace), complete!(tag!("(")))
+                preceded!(opt!(MultiSpace), complete!(tag!("(")))
             ),
             from_utf8
         ),
@@ -167,8 +166,7 @@ named!(
 /// Fix of IMHO broken `nom::digit`, which parses an empty string successfully.
 fn digit_complete(input: &[u8]) -> IResult<&[u8], &[u8]> {
     use nom::Err::*;
-    use nom::IResult::*;
-    use nom::{ErrorKind, is_digit};
+    use nom::error::{ErrorKind, ErrorKind::Digit};
 
     let n = input.iter().take_while(|&&c| is_digit(c)).count();
     if n > 0 {
@@ -193,7 +191,6 @@ named!(
 /// Parser that matches the exponential part of a float. If the `input[0] == 'e' | 'E'` then at
 /// least one digit must match.
 fn exp(input: &[u8]) -> IResult<&[u8], Option<usize>> {
-    use nom::IResult::*;
     match alt!(input, tag!("e") | tag!("E")) {
         Incomplete(_) | Error(_) => Done(input, None),
         Done(i, _) => match chain!(i, s: alt!(tag!("+") | tag!("-"))? ~
@@ -207,9 +204,6 @@ fn exp(input: &[u8]) -> IResult<&[u8], Option<usize>> {
 }
 
 fn number(input: &[u8]) -> IResult<&[u8], Token> {
-    use nom::Err;
-    use nom::ErrorKind;
-    use nom::IResult::*;
     use std::str::FromStr;
 
     match float(input) {
@@ -281,7 +275,6 @@ enum ParenState {
 pub fn tokenize<S: AsRef<str>>(input: S) -> Result<Vec<Token>, ParseError> {
     use self::TokenizerState::*;
     use nom::Err;
-    use nom::IResult::*;
     let mut state = LExpr;
     // number of function arguments left
     let mut paren_stack = vec![];
