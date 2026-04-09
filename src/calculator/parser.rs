@@ -6,8 +6,8 @@ impl Parser {
     pub fn preprocess(expr: &str, last: Option<f64>) -> Result<String, String> {
         let mut result = expr.to_lowercase();
 
-        if let Some(ans) = last {
-            result = result.replace("res", &ans.to_string());
+        if let Some(res) = last {
+            result = result.replace("res", &res.to_string());
         }
 
         result = Self::replace_unicode_ops(&result);
