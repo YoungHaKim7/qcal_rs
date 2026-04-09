@@ -1,4 +1,4 @@
-use rustyline::DefaultEditor;
+use rustyline::{DefaultEditor, config::Configurer};
 
 mod calculator;
 mod fprice;
@@ -31,6 +31,7 @@ fn main() -> rustyline::Result<()> {
 
     // Save history
     let _ = rl.save_history("history.txt");
+    let _ = rl.set_max_history_size(1000);
 
     Ok(())
 }
