@@ -8,7 +8,7 @@
 //! [shunting]: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 use std;
 use std::fmt;
-use tokenizer::Token;
+use crate::tokenizer::Token;
 
 #[derive(Debug, Clone, Copy)]
 enum Associativity {
@@ -65,21 +65,20 @@ impl std::error::Error for RPNError {
 /// Returns the operator precedence and associativity for a given token.
 fn prec_assoc(token: &Token) -> (u32, Associativity) {
     use self::Associativity::*;
-    use tokenizer::Operation::*;
-    use tokenizer::Token::*;
+    use crate::tokenizer::{Operation, Token};
     match *token {
-        Binary(op) => match op {
-            Plus | Minus => (1, Left),
-            Times | Div | Rem => (2, Left),
-            Pow => (4, Right),
+        Token::Binary(op) => match op {
+            Operation::Plus | Operation::Minus => (1, Left),
+            Operation::Times | Operation::Div | Operation::Rem => (2, Left),
+            Operation::Pow => (4, Right),
             _ => unimplemented!(),
         },
-        Unary(op) => match op {
-            Plus | Minus => (3, NA),
-            Fact => (5, NA),
+        Token::Unary(op) => match op {
+            Operation::Plus | Operation::Minus => (3, NA),
+            Operation::Fact => (5, NA),
             _ => unimplemented!(),
         },
-        Var(_) | Number(_) | Func(..) | LParen | RParen | Comma => (0, NA),
+        Token::Var(_) | Token::Number(_) | Token::Func(..) | Token::LParen | Token::RParen | Token::Comma => (0, NA),
     }
 }
 
@@ -89,7 +88,7 @@ fn prec_assoc(token: &Token) -> (u32, Associativity) {
 ///
 /// Returns `Err` if the input expression is not well-formed.
 pub fn to_rpn(input: &[Token]) -> Result<Vec<Token>, RPNError> {
-    use tokenizer::Token::*;
+    use crate::tokenizer::Token;
 
     let mut output = Vec::with_capacity(input.len());
     let mut stack = Vec::with_capacity(input.len());
@@ -97,9 +96,9 @@ pub fn to_rpn(input: &[Token]) -> Result<Vec<Token>, RPNError> {
     for (index, token) in input.iter().enumerate() {
         let token = token.clone();
         match token {
-            Number(_) | Var(_) => output.push(token),
-            Unary(_) => stack.push((index, token)),
-            Binary(_) => {
+            Token::Number(_) | Token::Var(_) => output.push(token),
+            Token::Unary(_) => stack.push((index, token)),
+            Token::Binary(_) => {
                 let pa1 = prec_assoc(&token);
                 while !stack.is_empty() {
                     let pa2 = prec_assoc(&stack.last().unwrap().1);
@@ -117,18 +116,18 @@ pub fn to_rpn(input: &[Token]) -> Result<Vec<Token>, RPNError> {
                 }
                 stack.push((index, token))
             }
-            LParen => stack.push((index, token)),
-            RParen => {
+            Token::LParen => stack.push((index, token)),
+            Token::RParen => {
                 let mut found = false;
                 while let Some((_, t)) = stack.pop() {
                     match t {
-                        LParen => {
+                        Token::LParen => {
                             found = true;
                             break;
                         }
-                        Func(name, nargs) => {
+                        Token::Func(name, nargs) => {
                             found = true;
-                            output.push(Func(name, Some(nargs.unwrap_or(0) + 1)));
+                            output.push(Token::Func(name, Some(nargs.unwrap_or(0) + 1)));
                             break;
                         }
                         _ => output.push(t),
@@ -138,16 +137,16 @@ pub fn to_rpn(input: &[Token]) -> Result<Vec<Token>, RPNError> {
                     return Err(RPNError::MismatchedRParen(index));
                 }
             }
-            Comma => {
+            Token::Comma => {
                 let mut found = false;
                 while let Some((i, t)) = stack.pop() {
                     match t {
-                        LParen => {
+                        Token::LParen => {
                             return Err(RPNError::UnexpectedComma(index));
                         }
-                        Func(name, nargs) => {
+                        Token::Func(name, nargs) => {
                             found = true;
-                            stack.push((i, Func(name, Some(nargs.unwrap_or(0) + 1))));
+                            stack.push((i, Token::Func(name, Some(nargs.unwrap_or(0) + 1))));
                             break;
                         }
                         _ => output.push(t),
@@ -157,14 +156,14 @@ pub fn to_rpn(input: &[Token]) -> Result<Vec<Token>, RPNError> {
                     return Err(RPNError::UnexpectedComma(index));
                 }
             }
-            Func(..) => stack.push((index, token)),
+            Token::Func(..) => stack.push((index, token)),
         }
     }
 
     while let Some((index, token)) = stack.pop() {
         match token {
-            Unary(_) | Binary(_) => output.push(token),
-            LParen | Func(..) => return Err(RPNError::MismatchedLParen(index)),
+            Token::Unary(_) | Token::Binary(_) => output.push(token),
+            Token::LParen | Token::Func(..) => return Err(RPNError::MismatchedLParen(index)),
             _ => panic!("Unexpected token on stack."),
         }
     }
@@ -173,10 +172,10 @@ pub fn to_rpn(input: &[Token]) -> Result<Vec<Token>, RPNError> {
     let mut n_operands = 0isize;
     for (index, token) in output.iter().enumerate() {
         match *token {
-            Var(_) | Number(_) => n_operands += 1,
-            Unary(_) => (),
-            Binary(_) => n_operands -= 1,
-            Func(_, Some(n_args)) => n_operands -= n_args as isize - 1,
+            Token::Var(_) | Token::Number(_) => n_operands += 1,
+            Token::Unary(_) => (),
+            Token::Binary(_) => n_operands -= 1,
+            Token::Func(_, Some(n_args)) => n_operands -= n_args as isize - 1,
             _ => panic!("Nothing else should be here"),
         }
         if n_operands <= 0 {
@@ -195,144 +194,144 @@ pub fn to_rpn(input: &[Token]) -> Result<Vec<Token>, RPNError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokenizer::Operation::*;
-    use tokenizer::Token::*;
+    use crate::tokenizer::Operation;
+    use crate::tokenizer::Token;
 
     #[test]
     fn test_to_rpn() {
-        assert_eq!(to_rpn(&[Number(1.)]), Ok(vec![Number(1.)]));
+        assert_eq!(to_rpn(&[Token::Number(1.)]), Ok(vec![Token::Number(1.)]));
         assert_eq!(
-            to_rpn(&[Number(1.), Binary(Plus), Number(2.)]),
-            Ok(vec![Number(1.), Number(2.), Binary(Plus)])
+            to_rpn(&[Token::Number(1.), Token::Binary(Operation::Plus), Token::Number(2.)]),
+            Ok(vec![Token::Number(1.), Token::Number(2.), Token::Binary(Operation::Plus)])
         );
         assert_eq!(
-            to_rpn(&[Unary(Minus), Number(1.), Binary(Pow), Number(2.)]),
-            Ok(vec![Number(1.), Number(2.), Binary(Pow), Unary(Minus)])
+            to_rpn(&[Token::Unary(Operation::Minus), Token::Number(1.), Token::Binary(Operation::Pow), Token::Number(2.)]),
+            Ok(vec![Token::Number(1.), Token::Number(2.), Token::Binary(Operation::Pow), Token::Unary(Operation::Minus)])
         );
         assert_eq!(
-            to_rpn(&[Number(1.), Unary(Fact), Binary(Pow), Number(2.)]),
-            Ok(vec![Number(1.), Unary(Fact), Number(2.), Binary(Pow)])
+            to_rpn(&[Token::Number(1.), Token::Unary(Operation::Fact), Token::Binary(Operation::Pow), Token::Number(2.)]),
+            Ok(vec![Token::Number(1.), Token::Unary(Operation::Fact), Token::Number(2.), Token::Binary(Operation::Pow)])
         );
         assert_eq!(
             to_rpn(&[
-                Number(1.),
-                Unary(Fact),
-                Binary(Div),
-                LParen,
-                Number(2.),
-                Binary(Plus),
-                Number(3.),
-                RParen,
-                Unary(Fact)
+                Token::Number(1.),
+                Token::Unary(Operation::Fact),
+                Token::Binary(Operation::Div),
+                Token::LParen,
+                Token::Number(2.),
+                Token::Binary(Operation::Plus),
+                Token::Number(3.),
+                Token::RParen,
+                Token::Unary(Operation::Fact)
             ]),
             Ok(vec![
-                Number(1.),
-                Unary(Fact),
-                Number(2.),
-                Number(3.),
-                Binary(Plus),
-                Unary(Fact),
-                Binary(Div)
+                Token::Number(1.),
+                Token::Unary(Operation::Fact),
+                Token::Number(2.),
+                Token::Number(3.),
+                Token::Binary(Operation::Plus),
+                Token::Unary(Operation::Fact),
+                Token::Binary(Operation::Div)
             ])
         );
         assert_eq!(
             to_rpn(&[
-                Number(3.),
-                Binary(Minus),
-                Number(1.),
-                Binary(Times),
-                Number(2.)
+                Token::Number(3.),
+                Token::Binary(Operation::Minus),
+                Token::Number(1.),
+                Token::Binary(Operation::Times),
+                Token::Number(2.)
             ]),
             Ok(vec![
-                Number(3.),
-                Number(1.),
-                Number(2.),
-                Binary(Times),
-                Binary(Minus)
+                Token::Number(3.),
+                Token::Number(1.),
+                Token::Number(2.),
+                Token::Binary(Operation::Times),
+                Token::Binary(Operation::Minus)
             ])
         );
         assert_eq!(
             to_rpn(&[
-                LParen,
-                Number(3.),
-                Binary(Minus),
-                Number(1.),
-                RParen,
-                Binary(Times),
-                Number(2.)
+                Token::LParen,
+                Token::Number(3.),
+                Token::Binary(Operation::Minus),
+                Token::Number(1.),
+                Token::RParen,
+                Token::Binary(Operation::Times),
+                Token::Number(2.)
             ]),
             Ok(vec![
-                Number(3.),
-                Number(1.),
-                Binary(Minus),
-                Number(2.),
-                Binary(Times)
+                Token::Number(3.),
+                Token::Number(1.),
+                Token::Binary(Operation::Minus),
+                Token::Number(2.),
+                Token::Binary(Operation::Times)
             ])
         );
         assert_eq!(
             to_rpn(&[
-                Number(1.),
-                Binary(Minus),
-                Unary(Minus),
-                Unary(Minus),
-                Number(2.)
+                Token::Number(1.),
+                Token::Binary(Operation::Minus),
+                Token::Unary(Operation::Minus),
+                Token::Unary(Operation::Minus),
+                Token::Number(2.)
             ]),
             Ok(vec![
-                Number(1.),
-                Number(2.),
-                Unary(Minus),
-                Unary(Minus),
-                Binary(Minus)
+                Token::Number(1.),
+                Token::Number(2.),
+                Token::Unary(Operation::Minus),
+                Token::Unary(Operation::Minus),
+                Token::Binary(Operation::Minus)
             ])
         );
         assert_eq!(
-            to_rpn(&[Var("x".into()), Binary(Plus), Var("y".into())]),
-            Ok(vec![Var("x".into()), Var("y".into()), Binary(Plus)])
+            to_rpn(&[Token::Var("x".into()), Token::Binary(Operation::Plus), Token::Var("y".into())]),
+            Ok(vec![Token::Var("x".into()), Token::Var("y".into()), Token::Binary(Operation::Plus)])
         );
 
         assert_eq!(
             to_rpn(&[
-                Func("max".into(), None),
-                Func("sin".into(), None),
-                Number(1f64),
-                RParen,
-                Comma,
-                Func("cos".into(), None),
-                Number(2f64),
-                RParen,
-                RParen
+                Token::Func("max".into(), None),
+                Token::Func("sin".into(), None),
+                Token::Number(1f64),
+                Token::RParen,
+                Token::Comma,
+                Token::Func("cos".into(), None),
+                Token::Number(2f64),
+                Token::RParen,
+                Token::RParen
             ]),
             Ok(vec![
-                Number(1f64),
-                Func("sin".into(), Some(1)),
-                Number(2f64),
-                Func("cos".into(), Some(1)),
-                Func("max".into(), Some(2))
+                Token::Number(1f64),
+                Token::Func("sin".into(), Some(1)),
+                Token::Number(2f64),
+                Token::Func("cos".into(), Some(1)),
+                Token::Func("max".into(), Some(2))
             ])
         );
 
-        assert_eq!(to_rpn(&[Binary(Plus)]), Err(RPNError::NotEnoughOperands(0)));
+        assert_eq!(to_rpn(&[Token::Binary(Operation::Plus)]), Err(RPNError::NotEnoughOperands(0)));
         assert_eq!(
-            to_rpn(&[Func("f".into(), None), Binary(Plus), RParen]),
+            to_rpn(&[Token::Func("f".into(), None), Token::Binary(Operation::Plus), Token::RParen]),
             Err(RPNError::NotEnoughOperands(0))
         );
         assert_eq!(
-            to_rpn(&[Var("x".into()), Number(1.)]),
+            to_rpn(&[Token::Var("x".into()), Token::Number(1.)]),
             Err(RPNError::TooManyOperands)
         );
-        assert_eq!(to_rpn(&[LParen]), Err(RPNError::MismatchedLParen(0)));
-        assert_eq!(to_rpn(&[RParen]), Err(RPNError::MismatchedRParen(0)));
+        assert_eq!(to_rpn(&[Token::LParen]), Err(RPNError::MismatchedLParen(0)));
+        assert_eq!(to_rpn(&[Token::RParen]), Err(RPNError::MismatchedRParen(0)));
         assert_eq!(
-            to_rpn(&[Func("sin".into(), None)]),
+            to_rpn(&[Token::Func("sin".into(), None)]),
             Err(RPNError::MismatchedLParen(0))
         );
-        assert_eq!(to_rpn(&[Comma]), Err(RPNError::UnexpectedComma(0)));
+        assert_eq!(to_rpn(&[Token::Comma]), Err(RPNError::UnexpectedComma(0)));
         assert_eq!(
-            to_rpn(&[Func("f".into(), None), Comma]),
+            to_rpn(&[Token::Func("f".into(), None), Token::Comma]),
             Err(RPNError::MismatchedLParen(0))
         );
         assert_eq!(
-            to_rpn(&[Func("f".into(), None), LParen, Comma, RParen]),
+            to_rpn(&[Token::Func("f".into(), None), Token::LParen, Token::Comma, Token::RParen]),
             Err(RPNError::UnexpectedComma(2))
         );
     }

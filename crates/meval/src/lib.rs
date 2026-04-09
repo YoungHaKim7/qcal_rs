@@ -10,7 +10,7 @@ pub mod de;
 
 pub use expr::*;
 pub use shunting_yard::RPNError;
-pub use tokenizer::ParseError;
+pub use crate::tokenizer::ParseError;
 
 /// An error produced during parsing or evaluation.
 #[derive(Debug, Clone, PartialEq)]

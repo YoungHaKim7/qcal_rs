@@ -1,16 +1,17 @@
-use fnv::FnvHashMap;
+use std::collections::HashMap;
 use std::f64::consts;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::str::FromStr;
 
-type ContextHashMap<K, V> = FnvHashMap<K, V>;
+type ContextHashMap<K, V> = HashMap<K, V>;
 
-use extra_math::factorial;
-use shunting_yard::to_rpn;
+use crate::extra_math::factorial;
+use crate::shunting_yard::to_rpn;
 use std;
 use std::fmt;
-use tokenizer::{Token, tokenize};
+use crate::tokenizer::{Token, tokenize};
+use crate::Error;
 
 /// Representation of a parsed expression.
 ///
@@ -40,31 +41,31 @@ impl Expr {
 
     /// Evaluates the expression with variables given by the argument.
     pub fn eval_with_context<C: ContextProvider>(&self, ctx: C) -> Result<f64, Error> {
-        use tokenizer::Operation::*;
-        use tokenizer::Token::*;
+        use crate::tokenizer::Operation;
+        use crate::tokenizer::Token;
 
         let mut stack = Vec::with_capacity(16);
 
         for token in &self.rpn {
             match *token {
-                Var(ref n) => {
+                Token::Var(ref n) => {
                     if let Some(v) = ctx.get_var(n) {
                         stack.push(v);
                     } else {
                         return Err(Error::UnknownVariable(n.clone()));
                     }
                 }
-                Number(f) => stack.push(f),
-                Binary(op) => {
+                Token::Number(f) => stack.push(f),
+                Token::Binary(op) => {
                     let right = stack.pop().unwrap();
                     let left = stack.pop().unwrap();
                     let r = match op {
-                        Plus => left + right,
-                        Minus => left - right,
-                        Times => left * right,
-                        Div => left / right,
-                        Rem => left % right,
-                        Pow => left.powf(right),
+                        Operation::Plus => left + right,
+                        Operation::Minus => left - right,
+                        Operation::Times => left * right,
+                        Operation::Div => left / right,
+                        Operation::Rem => left % right,
+                        Operation::Pow => left.powf(right),
                         _ => {
                             return Err(Error::EvalError(format!(
                                 "Unimplemented binary operation: {:?}",
@@ -74,12 +75,12 @@ impl Expr {
                     };
                     stack.push(r);
                 }
-                Unary(op) => {
+                Token::Unary(op) => {
                     let x = stack.pop().unwrap();
                     let r = match op {
-                        Plus => x,
-                        Minus => -x,
-                        Fact => {
+                        Operation::Plus => x,
+                        Operation::Minus => -x,
+                        Operation::Fact => {
                             // Check to make sure x has no fractional component (can be converted to int without loss)
                             match factorial(x) {
                                 Ok(res) => res,
@@ -95,7 +96,7 @@ impl Expr {
                     };
                     stack.push(r);
                 }
-                Func(ref n, Some(i)) => {
+                Token::Func(ref n, Some(i)) => {
                     if stack.len() < i {
                         return Err(Error::EvalError(format!(
                             "eval: stack does not have enough arguments for function token \
@@ -855,7 +856,7 @@ impl<'a> Default for Context<'a> {
     }
 }
 
-type GuardedFunc<'a> = Rc<Fn(&[f64]) -> Result<f64, FuncEvalError> + 'a>;
+type GuardedFunc<'a> = Rc<dyn Fn(&[f64]) -> Result<f64, FuncEvalError> + 'a>;
 
 /// Trait for types that can specify the number of required arguments for a function with a
 /// variable number of arguments.
@@ -948,7 +949,7 @@ pub mod de {
     use serde;
     use std::fmt;
     use std::str::FromStr;
-    use tokenizer::Token;
+    use crate::tokenizer::Token;
 
     impl<'de> serde::Deserialize<'de> for Expr {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
