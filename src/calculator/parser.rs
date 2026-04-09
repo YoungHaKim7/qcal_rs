@@ -7,7 +7,7 @@ impl Parser {
         let mut result = expr.to_lowercase();
 
         if let Some(ans) = last {
-            result = result.replace("ans", &ans.to_string());
+            result = result.replace("res", &ans.to_string());
         }
 
         result = Self::replace_unicode_ops(&result);

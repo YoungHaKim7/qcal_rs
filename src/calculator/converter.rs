@@ -18,11 +18,11 @@ impl Converter {
             .chars()
             .map(|c| {
                 let code = c as u32;
-                format!("'{}' → U+{:04X} ({})", c, code, code)
+                format!("\t'{}' → U+{:04X} ({})", c, code, code)
             })
             .collect();
 
-        Ok(result.join(",\n\t"))
+        Ok(result.join(",\n"))
     }
 
     fn to_unicode(value: i64) -> Result<String, String> {
