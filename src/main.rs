@@ -24,6 +24,9 @@ fn main() -> rustyline::Result<()> {
             Ok(output) => println!("{}", output),
             Err(e) => println!("Error: {}", e),
         }
+
+        // ⭐ IMPORTANT: store history
+        rl.add_history_entry(input)?;
     }
 
     Ok(())
