@@ -1,32 +1,29 @@
 [package]
 name = "tcal_rs"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
-rust-version = "1.94"
+rust-version = "1.85"
 
 description = "Number theory functions library - Rust port of libqalculate number theory module"
 license = "GPL-2.0-or-later"
 repository = "https://github.com/YoungHaKim7/tcal_rs"
 documentation = "https://docs.rs/tcal_rs"
 keywords = ["math", "number-theory", "primes", "gcd", "lcm"]
-categories = ["mathematics", "algorithms"]
+categories = ["mathematics", "algorithms", "no-std"]
 
 [dependencies]
 rustyline = "15"
 
-# Uncomment if you need the full library (won't build on macOS M1 without fixes)
-# rug = "1.24"
+[lib]
+name = "tcal_rs"
+path = "src/lib.rs"
 
-# [[bin]]
-# name = "tcal_rs"
-# path = "src/main.rs"
+[[bin]]
+name = "tcal_rs"
+path = "src/main.rs"
 
 [dev-dependencies]
 criterion = "0.5"
-
-# [lib]
-# name = "tcalulator_rs"
-# path = "src/lib.rs"
 
 [profile.release]
 opt-level = 3

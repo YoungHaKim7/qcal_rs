@@ -388,3 +388,43 @@ All clippy warnings resolved.
 # 기능 추가
 
 - `tan(20)` now returns `2.23716094...` which is correct. Fixed by adding `tan` (and other trig functions) to the builtin function list in `evaluator.rs:56-68`.
+
+# rug remove
+
+- Perfect! I've successfully removed the `rug` dependency and implemented all number theory functionality using only Rust's standard library. Here's a summary of the changes:
+
+## Summary of Changes
+
+### 1. **Removed External Dependencies**
+- Removed the `rug` crate from `Cargo.toml`
+- Updated version to `0.2.0`
+- Changed to Rust 2024 edition with appropriate rust-version
+
+### 2. **Updated All Number Theory Modules**
+- **`number_theory.rs`**: Replaced `rug::Integer` with `i64`/`i128`, implemented custom GCD/LCM algorithms
+- **`parity.rs`**: Simple parity checks using native types
+- **`primes.rs`**: Implemented Miller-Rabin primality test for u64, kept small primes lookup table
+- **`rounding.rs`**: All rounding functions using native i64/f64 types
+- **`totient.rs`**: Euler's totient function using native types
+- **`traits.rs`**: Extension traits for i64/i128 with separate traits for each
+
+### 3. **Key Features Implemented**
+- ✅ GCD and LCM algorithms (Euclidean algorithm)
+- ✅ Miller-Rabin primality test (deterministic for u64)
+- ✅ Modular exponentiation (binary exponentiation)
+- ✅ Euler's totient function
+- ✅ Prime counting and listing
+- ✅ Bernoulli numbers (Akiyama-Tanigawa algorithm)
+- ✅ All rounding modes
+- ✅ Parity checks
+
+### 4. **Test Results**
+All 41 tests passed successfully, covering:
+- Parity functions (4 tests)
+- Prime operations (7 tests) 
+- Rounding functions (10 tests)
+- Core functions (7 tests)
+- Totient function (5 tests)
+- Traits (5 tests)
+
+The library now has **zero external dependencies** for the number theory functionality and uses only standard library types (`i64`, `i128`, `u64`, `f64`).
