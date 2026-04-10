@@ -428,3 +428,11 @@ All 41 tests passed successfully, covering:
 - Traits (5 tests)
 
 The library now has **zero external dependencies** for the number theory functionality and uses only standard library types (`i64`, `i128`, `u64`, `f64`).
+
+# add gcd, lcm
+
+- Both `gcd` and `lcm` are now working correctly:
+- `gcd(48, 18)` = **6** ✓
+- `lcm(12, 18)` = **36** ✓
+
+- The issue was that these functions were defined in the `number_theory` module but not registered in the evaluator's function call handler at `src/calculator/evaluator.rs:71`.
