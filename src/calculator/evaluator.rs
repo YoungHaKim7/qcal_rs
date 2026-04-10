@@ -1,4 +1,5 @@
 use super::ast::*;
+use tcal_rs::totient;
 use std::collections::HashMap;
 
 pub struct Evaluator {
@@ -66,6 +67,7 @@ impl Evaluator {
                     "ln" | "log" => vals[0].ln(),
                     "log10" => vals[0].log10(),
                     "exp" => vals[0].exp(),
+                    "totient" => totient(vals[0] as i64) as f64,
                     _ => panic!("Unknown function"),
                 }
             }
