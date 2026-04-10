@@ -78,10 +78,46 @@ Goodbye!
 # 2진법으로 확인
 
 ```bash
-Qalculate CLI - Interactive Calculator
-Type 'exit' or 'quit' to exit
-
 Supported: sqrt(72), 2^3 + 5, sin(pi), 133 to hex, etc.
+
+Qalculate CLI - Interactive Calculator
+Type 'help' or 'exit'
+
+> help
+Commands:
+- math: 2+3*4
+- power: 2^10
+- bitwise: 5 & 3, 1 << 4
+- hex/bin/oct: 0xFF, 0b1010
+- convert: 255 to hex bin oct
+- unicode: "안녕" to unicode
+- variables: x = 10
+- res: reuse last result
+
+> x = 10
+        10
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HEX : "0xA"
+DEC : "10"
+OCT : "0o12"
+BIN : "1010"
+0000  0000  0000  0000  0000  0000  0000  0000
+63                      47                  32
+
+0000  0000  0000  0000  0000  0000  0000  1010
+31                      15                   0
+> x +10
+        20
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HEX : "0x14"
+DEC : "20"
+OCT : "0o24"
+BIN : "0001 0100"
+0000  0000  0000  0000  0000  0000  0000  0000
+63                      47                  32
+
+0000  0000  0000  0000  0000  0000  0001  0100
+31                      15                   0
 
 > 0x1f3d + 0x1ffa
                 16,183
