@@ -23,7 +23,7 @@ impl Engine {
         let mut input = input.to_string();
 
         if let Some(last) = self.last {
-            input = input.replace("ans", &last.to_string());
+            input = input.replace("res", &last.to_string());
         }
 
         let input = self.preprocess(&input);

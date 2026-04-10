@@ -31,7 +31,7 @@ fn main() -> rustyline::Result<()> {
 - convert: 255 to hex bin oct
 - unicode: "안녕" to unicode
 - variables: x = 10
-- ans: reuse last result
+- res: reuse last result
 "#
             );
             continue;
