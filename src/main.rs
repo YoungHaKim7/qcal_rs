@@ -1,37 +1,50 @@
-use rustyline::{DefaultEditor, config::Configurer};
-
 mod calculator;
 mod fprice;
 
-use calculator::engine::Calculator;
+use calculator::engine::Engine;
+use rustyline::DefaultEditor;
 
 fn main() -> rustyline::Result<()> {
     println!("Qalculate CLI - Interactive Calculator");
-    println!("Type 'exit' or 'quit' to exit\n");
+    println!("Type 'help' or 'exit'\n");
 
     let mut rl = DefaultEditor::new()?;
-    let mut calc = Calculator::new();
+    let _ = rl.load_history("history.txt");
+
+    let mut engine = Engine::new();
 
     loop {
         let input = rl.readline("> ")?;
         let input = input.trim();
 
-        if input.eq_ignore_ascii_case("exit") || input.eq_ignore_ascii_case("quit") {
+        if input == "exit" || input == "quit" {
             break;
         }
 
-        match calc.evaluate(input) {
-            Ok(output) => println!("{}", output),
+        if input == "help" {
+            println!(
+                r#"Commands:
+- math: 2+3*4
+- power: 2^10
+- bitwise: 5 & 3, 1 << 4
+- hex/bin/oct: 0xFF, 0b1010
+- convert: 255 to hex bin oct
+- unicode: "안녕" to unicode
+- variables: x = 10
+- ans: reuse last result
+"#
+            );
+            continue;
+        }
+
+        match engine.eval(input) {
+            Ok(out) => println!("{}", out),
             Err(e) => println!("Error: {}", e),
         }
 
-        // ⭐ IMPORTANT: store history
         rl.add_history_entry(input)?;
     }
 
-    // Save history
     let _ = rl.save_history("history.txt");
-    let _ = rl.set_max_history_size(1000);
-
     Ok(())
 }
