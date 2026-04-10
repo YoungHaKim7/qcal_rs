@@ -12,7 +12,6 @@ keywords = ["math", "number-theory", "primes", "gcd", "lcm"]
 categories = ["mathematics", "algorithms"]
 
 [dependencies]
-atty = "0.2"
 rustyline = "15"
 
 # Uncomment if you need the full library (won't build on macOS M1 without fixes)
