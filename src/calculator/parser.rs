@@ -111,7 +111,7 @@ impl Parser {
     }
 
     fn parse_factor(&mut self) -> Result<Expr, String> {
-        let mut node = self.parse_unary()?;
+        let mut node = self.parse_power()?;
 
         while self.match_token(&[Token::Mul, Token::Div]) {
             let op = match self.previous() {
@@ -120,11 +120,27 @@ impl Parser {
                 _ => unreachable!(),
             };
 
-            let right = self.parse_unary()?;
+            let right = self.parse_power()?;
 
             node = Expr::Binary {
                 left: Box::new(node),
                 op,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(node)
+    }
+
+    fn parse_power(&mut self) -> Result<Expr, String> {
+        let mut node = self.parse_unary()?;
+
+        while self.match_token(&[Token::Pow]) {
+            let right = self.parse_unary()?;
+
+            node = Expr::Binary {
+                left: Box::new(node),
+                op: BinaryOp::Pow,
                 right: Box::new(right),
             };
         }

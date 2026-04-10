@@ -367,3 +367,11 @@ The original panic has been fixed by properly handling UTF-8 string boundaries a
 - **Lower 32 bits** (positions 31-0): contains your value
 
 `0x3F37` (16,183 decimal) = `0011 1111 0011 0111` in binary, displayed in the lower bits with proper position labels.
+
+# power 수정
+
+Both now work correctly:
+- `2^4` = **16** ✓
+- `2^6` = **64** ✓
+
+**The fix:** Added `parse_power()` function to the parser. The lexer was tokenizing `^` as `Token::Pow` and the evaluator could compute it, but the parser was never consuming the token. The new function handles exponentiation with proper precedence (higher than multiplication/division).
