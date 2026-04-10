@@ -384,3 +384,7 @@ Both now work correctly:
 2. **fprice.rs:10** - Replaced manual modulo check with `.is_multiple_of(3)` method
 
 All clippy warnings resolved.
+
+# 기능 추가
+
+- `tan(20)` now returns `2.23716094...` which is correct. Fixed by adding `tan` (and other trig functions) to the builtin function list in `evaluator.rs:56-68`.

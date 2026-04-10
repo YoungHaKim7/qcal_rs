@@ -3,17 +3,27 @@ use crate::fprice::PriceFormatter;
 pub struct Formatter;
 
 impl Formatter {
-    pub fn full(value: i64) -> String {
-        let dec = PriceFormatter::format(value);
+    pub fn full(value: f64) -> String {
+        let int_value = value as i64;
+        let dec = PriceFormatter::format(int_value);
+
+        // Format the floating-point value, removing unnecessary trailing zeros
+        let float_str = if value.fract() == 0.0 {
+            format!("{}", value as i64)
+        } else {
+            // Remove trailing zeros but keep at least one decimal place
+            let s = format!("{:.6}", value);
+            s.trim_end_matches('0').trim_end_matches('.').to_string()
+        };
 
         format!(
             "        {}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nHEX : \"0x{:X}\"\nDEC : \"{}\"\nOCT : \"0o{:o}\"\nBIN : \"{}\"\n{}\n",
+            float_str,
+            int_value,
             dec,
-            value,
-            dec,
-            value,
-            Self::bin(value),
-            Self::format_64bit(value)
+            int_value,
+            Self::bin(int_value),
+            Self::format_64bit(int_value)
         )
     }
 

@@ -56,8 +56,16 @@ impl Evaluator {
                 match name.as_str() {
                     "sin" => vals[0].sin(),
                     "cos" => vals[0].cos(),
+                    "tan" => vals[0].tan(),
+                    "asin" => vals[0].asin(),
+                    "acos" => vals[0].acos(),
+                    "atan" => vals[0].atan(),
                     "sqrt" => vals[0].sqrt(),
-                    "log" => vals[0].ln(),
+                    "cbrt" => vals[0].cbrt(),
+                    "abs" => vals[0].abs(),
+                    "ln" | "log" => vals[0].ln(),
+                    "log10" => vals[0].log10(),
+                    "exp" => vals[0].exp(),
                     _ => panic!("Unknown function"),
                 }
             }
