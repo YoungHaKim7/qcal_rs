@@ -3,8 +3,8 @@ pub struct Converter;
 impl Converter {
     pub fn unicode(input: &str) -> String {
         // 큰따옴표로 둘러싸인 문자열 찾기
-        if let Some(start) = input.find('"') {
-            if let Some(end) = input[start + 1..].find('"') {
+        if let Some(start) = input.find('"')
+            && let Some(end) = input[start + 1..].find('"') {
                 let content = &input[start + 1..start + 1 + end];
                 return content
                     .chars()
@@ -13,7 +13,6 @@ impl Converter {
                     .collect::<Vec<_>>()
                     .join("\n");
             }
-        }
 
         // 큰따옴표가 없으면 전체 입력 처리
         input

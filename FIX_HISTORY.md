@@ -375,3 +375,12 @@ Both now work correctly:
 - `2^6` = **64** ✓
 
 **The fix:** Added `parse_power()` function to the parser. The lexer was tokenizing `^` as `Token::Pow` and the evaluator could compute it, but the parser was never consuming the token. The new function handles exponentiation with proper precedence (higher than multiplication/division).
+
+# clippy 마무리
+
+- Fixed both clippy warnings:
+
+1. **converter.rs:6** - Collapsed nested `if let` statements using let chains (`&& let`)
+2. **fprice.rs:10** - Replaced manual modulo check with `.is_multiple_of(3)` method
+
+All clippy warnings resolved.
