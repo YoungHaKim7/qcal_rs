@@ -359,3 +359,11 @@ You can use `unicode`, `UNICODE`, `uni`, or `UNI` - all work the same.
 - ✅ Compatible with all existing calculator features
 
 The original panic has been fixed by properly handling UTF-8 string boundaries and avoiding byte indexing on multibyte characters.
+
+# print (64bit fix) AI fix
+- The 64-bit binary visualization is now working. The output shows:
+
+- **Upper 32 bits** (positions 63-32): all zeros for small values
+- **Lower 32 bits** (positions 31-0): contains your value
+
+`0x3F37` (16,183 decimal) = `0011 1111 0011 0111` in binary, displayed in the lower bits with proper position labels.
