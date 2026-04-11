@@ -65,7 +65,7 @@
 //! ```
 
 use super::ast::*;
-use crate::{totient, gcd, lcm};
+use crate::{gcd, lcm, totient};
 use std::collections::HashMap;
 
 /// # Expression Evaluator

@@ -601,11 +601,7 @@ pub fn bernoulli(n: u64) -> Option<(i64, i64)> {
 }
 
 fn gcd_int(a: i64, b: i64) -> i64 {
-    if b == 0 {
-        a
-    } else {
-        gcd_int(b, a % b)
-    }
+    if b == 0 { a } else { gcd_int(b, a % b) }
 }
 
 // Precomputed small primes (first 10000 primes)

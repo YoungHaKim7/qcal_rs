@@ -218,12 +218,7 @@ fn prime_factorization(n: i64) -> Vec<PrimeFactor> {
 
 /// Recursively generates all divisors from prime factorization.
 #[allow(dead_code)]
-fn generate_divisors(
-    factors: &[PrimeFactor],
-    index: usize,
-    current: i64,
-    divisors: &mut Vec<i64>,
-) {
+fn generate_divisors(factors: &[PrimeFactor], index: usize, current: i64, divisors: &mut Vec<i64>) {
     if index == factors.len() {
         divisors.push(current);
         return;
