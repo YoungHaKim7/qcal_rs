@@ -34,7 +34,7 @@ fn main() -> rustyline::Result<()> {
             continue;
         }
 
-        match engine.eval(input) {
+        match engine.full_eval(input) {
             Ok(out) => println!("{}", out),
             Err(e) => println!("Error: {}", e),
         }

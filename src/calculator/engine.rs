@@ -91,7 +91,31 @@ impl Engine {
         let val = self.evaluator.eval(&ast);
         self.last = Some(val);
 
+        Ok((val).to_string())
+    }
+
+    pub fn full_eval(&mut self, input: &str) -> Result<String, String> {
+        if input.contains("to unicode") || input.contains("to uni") {
+            return Ok(Converter::unicode(input));
+        }
+
+        let mut input = input.to_string();
+
+        if let Some(last) = self.last {
+            input = input.replace("res", &last.to_string());
+        }
+
+        let input = self.preprocess(&input);
+
+        let tokens = Lexer::tokenize(&input)?;
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse()?;
+
+        let val = self.evaluator.eval(&ast);
+        self.last = Some(val);
+
         Ok(Formatter::full(val))
+        // Ok((val).to_string())
     }
 
     /// # Preprocess Input
