@@ -436,3 +436,18 @@ The library now has **zero external dependencies** for the number theory functio
 - `lcm(12, 18)` = **36** ✓
 
 - The issue was that these functions were defined in the `number_theory` module but not registered in the evaluator's function call handler at `src/calculator/evaluator.rs:71`.
+
+# clippy(260411)
+- All clippy errors have been fixed:
+
+1. **`rounding.rs:121`** - Replaced manual `Default` impl with `#[derive(Default)]` and `#[default]` attribute on `HalfToEven` variant
+
+2. **`number_theory.rs:318`** - Changed `base.abs() as u64` to `base.unsigned_abs()`
+
+3. **`number_theory.rs:321`** - Removed unnecessary cast `modulus as i64` (was already `i64`)
+
+4. **`engine.rs:41`** - Added `Default` trait implementation for `Engine`
+
+5. **`evaluator.rs:81`** - Added `Default` trait implementation for `Evaluator`
+
+6. **`fprice.rs:10`** - Replaced `is_multiple_of(3)` with `% 3 == 0` for MSRV 1.85.0 compatibility

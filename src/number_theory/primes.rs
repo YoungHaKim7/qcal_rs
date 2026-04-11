@@ -1,35 +1,102 @@
-//! Prime number operations
+//! # Prime Number Operations Module
 //!
-//! Provides various prime-related functions including:
-//! - Primality testing
-//! - Finding next/previous primes
-//! - Getting the nth prime
-//! - Counting primes (π function)
-//! - Listing all primes up to a value
-//! - Bernoulli numbers
+//! This module provides comprehensive prime number operations including primality
+//! testing, prime generation, prime counting, and Bernoulli numbers.
+//!
+//! ## Mathematical Background
+//!
+//! ### Prime Numbers
+//! A prime number is a natural number greater than 1 that has no positive divisors
+//! other than 1 and itself. The sequence begins: 2, 3, 5, 7, 11, 13, 17, 19, ...
+//!
+//! ### Prime Number Theorem
+//! The distribution of primes is described by:
+//! ```text
+//! π(x) ≈ x / ln(x)
+//! ```
+//! where π(x) counts primes ≤ x.
+//!
+//! ### Miller-Rabin Primality Test
+//! For n > 2, write n-1 = d×2^s where d is odd. Then n is probably prime if:
+//! ```text
+//! a^d ≡ 1 (mod n) OR
+//! a^(d×2^r) ≡ -1 (mod n) for some 0 ≤ r < s
+//! ```
+//!
+//! ### Bernoulli Numbers
+//! A sequence B₀, B₁, B₂, ... appearing in:
+//! - Taylor series of tan(x) and x/(e^x-1)
+//! - Faulhaber's formula for sums of powers
+//! - Euler-Maclaurin formula
+//!
+//! ## Algorithms Used
+//!
+//! | Function | Algorithm | Time Complexity |
+//! |----------|-----------|-----------------|
+//! | `is_prime` | Miller-Rabin (large) / Trial division (small) | O(k log³n) / O(√n) |
+//! | `primes_up_to` | Sieve of Eratosthenes | O(n log log n) |
+//! | `nth_prime` | PNT approximation + search | O(n log n) |
+//! | `prime_count` | Binary search / Approximation | O(log n) / O(1) |
+//! | `bernoulli` | Akiyama-Tanigawa | O(n²) |
 
-/// Checks if a number is prime using deterministic testing for reasonable sizes.
+/// # Primality Test (Hybrid Approach)
 ///
-/// For n < 3,474,749,660,383, it's sufficient to test a = 2, 3, 5, 7, 11, 13.
-/// For larger numbers, uses more bases or Miller-Rabin with more rounds.
+/// Checks if a number is prime using a hybrid algorithm optimized for different input sizes.
 ///
-/// # Arguments
+/// ## Algorithm Selection
 ///
-/// * `n` - The number to check (must be positive)
+/// ### For n < 1,000,000: Trial Division with 6k±1 Optimization
+/// All primes > 3 are of the form 6k±1. This optimization checks only these candidates:
+/// ```text
+/// Check 2, 3, then test i and i+2 for i = 5, 11, 17, ...
+/// ```
 ///
-/// # Returns
+/// ### For n ≥ 1,000,000: Miller-Rabin (Deterministic)
+/// Uses 12 witness bases that are proven sufficient for all 64-bit integers:
+/// ```text
+/// [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
+/// ```
 ///
-/// `true` if prime, `false` if composite
+/// ## Mathematical Background
 ///
-/// # Examples
+/// The Miller-Rabin test is based on Fermat's Little Theorem:
+/// ```text
+/// If p is prime and a < p, then a^(p-1) ≡ 1 (mod p)
+/// ```
 ///
+/// For n > 2, write n-1 = d×2^s where d is odd. n is composite if:
+/// ```text
+/// a^d ≢ 1 (mod n) AND
+/// a^(d×2^r) ≢ -1 (mod n) for all 0 ≤ r < s
+/// ```
+///
+/// ## Time Complexity
+/// - Small n: O(√n / log n) - trial division
+/// - Large n: O(k log³n) - Miller-Rabin with k=12 witnesses
+///
+/// ## Examples
 /// ```
 /// use tcal_rs::is_prime;
 ///
+/// // Small primes
+/// assert!(is_prime(2));
 /// assert!(is_prime(17));
 /// assert!(!is_prime(18));
-/// assert!(is_prime(7919)); // 1000th prime
+///
+/// // Large primes
+/// assert!(is_prime(7919));   // 1000th prime
+/// assert!(is_prime(104729)); // 10000th prime
+///
+/// // Carmichael numbers (strong pseudoprimes)
+/// assert!(!is_prime(561));   // Smallest Carmichael number
+/// assert!(!is_prime(1105));
 /// ```
+///
+/// # Arguments
+/// * `n` - The number to check (must be non-negative)
+///
+/// # Returns
+/// `true` if prime, `false` if composite or n < 2
 pub fn is_prime(n: u64) -> bool {
     if n < 2 {
         return false;
@@ -342,26 +409,47 @@ fn count_primes_binary(x: i64) -> i64 {
     }
 }
 
-/// Returns all prime numbers up to and including n.
+/// # Sieve of Eratosthenes
 ///
-/// Uses the Sieve of Eratosthenes for efficiency.
+/// Returns all prime numbers up to and including n using the ancient Sieve of Eratosthenes algorithm.
 ///
-/// # Arguments
+/// ## Algorithm
 ///
-/// * `n` - Upper bound (must be non-negative)
+/// 1. Create a boolean array `is_prime[0..n]` initialized to true
+/// 2. Mark 0 and 1 as not prime
+/// 3. For each p from 2 to √n:
+///    - If p is prime, mark all multiples of p (starting from p²) as composite
+/// 4. Remaining true values are primes
 ///
-/// # Returns
+/// ## Optimization
+/// We start marking from p² because smaller multiples (2p, 3p, ..., (p-1)p)
+/// have already been marked by smaller primes.
 ///
-/// Vector of all primes ≤ n
+/// ## Time Complexity
+/// - O(n log log n) - nearly linear
 ///
-/// # Examples
+/// ## Space Complexity
+/// - O(n) - boolean array of size n+1
 ///
+/// ## Examples
 /// ```
 /// use tcal_rs::primes_up_to;
 ///
 /// let primes = primes_up_to(20);
 /// assert_eq!(primes, vec![2, 3, 5, 7, 11, 13, 17, 19]);
+///
+/// let empty = primes_up_to(1);
+/// assert!(empty.is_empty());
 /// ```
+///
+/// # Limitations
+/// - Returns empty vector for n > 10,000,000 to prevent memory issues
+///
+/// # Arguments
+/// * `n` - Upper bound (must be non-negative)
+///
+/// # Returns
+/// Vector of all primes ≤ n in ascending order
 pub fn primes_up_to(n: i64) -> Vec<i64> {
     if n < 2 {
         return Vec::new();
@@ -398,34 +486,77 @@ pub fn primes_up_to(n: i64) -> Vec<i64> {
         .collect()
 }
 
-/// Computes the nth Bernoulli number B_n.
+/// # Bernoulli Numbers (Akiyama-Tanigawa Algorithm)
 ///
-/// Bernoulli numbers are a sequence of rational numbers that appear
-/// in many areas of mathematics including the Taylor series expansion
-/// of tan(x) and the Faulhaber formula for sums of powers.
+/// Computes the nth Bernoulli number B_n as a rational number (numerator, denominator).
 ///
-/// # Arguments
+/// ## Mathematical Background
 ///
-/// * `n` - Index of Bernoulli number (non-negative)
+/// Bernoulli numbers B₀, B₁, B₂, ... are a sequence of rational numbers with
+/// deep connections to:
+/// - **Number Theory**: Sum of powers formula (Faulhaber)
+/// - **Analysis**: Taylor series of tan(x), cot(x), x/(e^x-1)
+/// - **Topology**: Homotopy groups of spheres
 ///
-/// # Returns
+/// ### First Few Values
+/// ```text
+/// B₀  = 1
+/// B₁  = -1/2
+/// B₂  = 1/6
+/// B₄  = -1/30
+/// B₆  = 1/42
+/// B₈  = -1/30
+/// B₁₀ = 5/66
+/// B_odd>1 = 0
+/// ```
 ///
-/// The Bernoulli number as a Rational (numerator, denominator)
+/// ### Faulhaber's Formula (Sum of Powers)
+/// ```text
+/// Σ(k^p) for k=1 to n = (1/(p+1)) × Σ(C(p+1,k) × B_k × n^(p+1-k))
+/// ```
 ///
-/// # Examples
+/// ### Taylor Series for tan(x)
+/// ```text
+/// tan(x) = Σ(B_2n × (-4)^n × (1-4^n) × x^(2n-1) / (2n)!)
+/// ```
 ///
+/// ## Algorithm: Akiyama-Tanigawa
+///
+/// ```text
+/// Initialize: a[j] = 1/(j+1) for j = 0 to m
+///
+/// For m from 1 to n:
+///     For k from m down to 1:
+///         a[k-1] = k × (a[k-1] - a[k])
+///
+/// B_n = a[0]
+/// ```
+///
+/// ## Time Complexity
+/// - O(n²) - nested loops
+///
+/// ## Examples
 /// ```
 /// use tcal_rs::bernoulli;
 ///
-/// // B_0 = 1
-/// assert_eq!(bernoulli(0), Some((1, 1)));
-/// // B_1 = -1/2
-/// assert_eq!(bernoulli(1), Some((-1, 2)));
-/// // B_2 = 1/6
-/// assert_eq!(bernoulli(2), Some((1, 6)));
-/// // B_odd > 1 = 0
-/// assert_eq!(bernoulli(3), Some((0, 1)));
+/// // Special cases
+/// assert_eq!(bernoulli(0), Some((1, 1)));    // B₀ = 1
+/// assert_eq!(bernoulli(1), Some((-1, 2)));  // B₁ = -1/2
+///
+/// // Even indices
+/// assert_eq!(bernoulli(2), Some((1, 6)));    // B₂ = 1/6
+/// assert_eq!(bernoulli(4), Some((-1, 30)));  // B₄ = -1/30
+///
+/// // Odd indices > 1 are zero
+/// assert_eq!(bernoulli(3), Some((0, 1)));    // B₃ = 0
+/// assert_eq!(bernoulli(5), Some((0, 1)));    // B₅ = 0
 /// ```
+///
+/// # Arguments
+/// * `n` - Index of Bernoulli number (non-negative)
+///
+/// # Returns
+/// `Some((numerator, denominator))` representing B_n, or None for invalid inputs
 pub fn bernoulli(n: u64) -> Option<(i64, i64)> {
     // Special case: B_1 = -1/2
     if n == 1 {

@@ -1,9 +1,86 @@
+//! # Expression Evaluator
+//!
+//! This module provides evaluation of Abstract Syntax Trees (AST) into numeric results.
+//!
+//! ## Features
+//!
+//! ### Built-in Constants
+//! | Constant | Value | Description |
+//! |----------|-------|-------------|
+//! | `pi` | 3.14159... | Ratio of circle circumference to diameter |
+//! | `e` | 2.71828... | Euler's number, base of natural logarithm |
+//! | `res` | Previous result | Holds the last computed value |
+//!
+//! ### Mathematical Functions
+//!
+//! #### Trigonometric Functions
+//! - `sin(x)` - Sine
+//! - `cos(x)` - Cosine
+//! - `tan(x)` - Tangent
+//! - `asin(x)` - Arcsine (inverse sine)
+//! - `acos(x)` - Arccosine (inverse cosine)
+//! - `atan(x)` - Arctangent (inverse tangent)
+//!
+//! #### Root Functions
+//! - `sqrt(x)` - Square root
+//! - `cbrt(x)` - Cube root
+//! - `abs(x)` - Absolute value
+//!
+//! #### Logarithmic Functions
+//! - `ln(x)` or `log(x)` - Natural logarithm (base e)
+//! - `log10(x)` - Base-10 logarithm
+//! - `exp(x)` - Exponential function (e^x)
+//!
+//! #### Number Theory Functions
+//! - `totient(n)` - Euler's totient function φ(n)
+//! - `gcd(a, b)` - Greatest common divisor
+//! - `lcm(a, b)` - Least common multiple
+//!
+//! ### Variable Assignment
+//! ```text
+//! x = 5          # Assign 5 to x
+//! y = x * 2      # y = 10
+//! ```
+//!
+//! ## Evaluation Algorithm
+//!
+//! 1. **Traverse AST recursively** in post-order (children before parent)
+//! 2. **Evaluate each node type**:
+//!    - Number: Return the value
+//!    - Variable: Lookup in symbol table or return 0
+//!    - Assignment: Evaluate RHS, store in symbol table
+//!    - Unary/Binary: Evaluate operands, apply operator
+//!    - Function Call: Evaluate arguments, call built-in function
+//!
+//! ## Examples
+//! ```text
+//! Input: "sin(pi/2)"
+//! Output: 1.0
+//!
+//! Input: "totient(30)"
+//! Output: 8.0
+//!
+//! Input: "x = 5; x * 2 + 3"
+//! Output: 13.0
+//! ```
+
 use super::ast::*;
 use crate::{totient, gcd, lcm};
 use std::collections::HashMap;
 
+/// # Expression Evaluator
+///
+/// Evaluates AST nodes into numeric results with support for variables
+/// and built-in functions.
 pub struct Evaluator {
+    /// Symbol table storing variable assignments
     vars: HashMap<String, f64>,
+}
+
+impl Default for Evaluator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Evaluator {

@@ -1,8 +1,56 @@
+//! # Expression Parser
+//!
+//! This module provides recursive descent parsing of token streams into an
+//! Abstract Syntax Tree (AST) for evaluation.
+//!
+//! ## Parsing Algorithm
+//!
+//! Uses **recursive descent parsing** with operator precedence:
+//!
+//! ### Grammar (Simplified)
+//! ```text
+//! assignment  → expr ('=' IDENTIFIER expr)?
+//! expr        → or_expr
+//! or_expr     → and_expr ('or' and_expr)*
+//! and_expr    → shift_expr ('and' shift_expr)*
+//! shift_expr  → term (('<<' | '>>') term)*
+//! term        → factor (('+' | '-') factor)*
+//! factor      → power (('*' | '/') power)*
+//! power       → unary ('^' unary)?
+//! unary       → ('-')* primary
+//! primary     → NUMBER | IDENTIFIER | '(' expr ')' | IDENTIFIER '(' args? ')'
+//! ```
+//!
+//! ### Operator Precedence (Highest to Lowest)
+//! 1. Function calls and grouping
+//! 2. Exponentiation (^) - Right associative
+//! 3. Unary minus
+//! 4. Multiplication/Division (*, /)
+//! 5. Addition/Subtraction (+, -)
+//! 6. Bitwise shifts (<<, >>)
+//! 7. Bitwise AND (&)
+//! 8. Bitwise OR (|)
+//! 9. Assignment (=)
+//!
+//! ## Examples
+//! ```text
+//! Input: "2 + 3 * x"
+//! AST: Binary(Add, Number(2), Binary(Mul, Number(3), Variable("x")))
+//!
+//! Input: "sin(pi/2)"
+//! AST: Call("sin", [Binary(Div, Variable("pi"), Number(2))])
+//! ```
+
 use super::ast::*;
 use super::lexer::Token;
 
+/// # Recursive Descent Parser
+///
+/// Parses tokens into an Abstract Syntax Tree (AST) using operator precedence.
 pub struct Parser {
+    /// Token stream being parsed
     tokens: Vec<Token>,
+    /// Current position in token stream
     pos: usize,
 }
 

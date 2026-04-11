@@ -22,6 +22,32 @@ pub enum Token {
 pub struct Lexer;
 
 impl Lexer {
+    /// # Tokenize Input String
+    ///
+    /// Converts a raw input string into a vector of tokens for parsing.
+    ///
+    /// ## Algorithm
+    /// 1. Scan characters left-to-right
+    /// 2. Classify each character/token:
+    ///    - Digits and decimal point → Number token
+    ///    - Letters → Identifier token
+    ///    - Operators and delimiters → Corresponding tokens
+    ///    - Whitespace → Skip
+    /// 3. Return error on unexpected characters
+    ///
+    /// ## Examples
+    /// ```
+    /// use tcal_rs::calculator::lexer::Lexer;
+    ///
+    /// let tokens = Lexer::tokenize("2 + 3 * sin(x)").unwrap();
+    /// // Produces: [Number(2), Plus, Number(3), Mul, Ident("sin"), LParen, Ident("x"), RParen]
+    /// ```
+    ///
+    /// # Arguments
+    /// * `input` - The input string to tokenize
+    ///
+    /// # Returns
+    /// `Ok(Vec<Token>)` on success, `Err(String)` with error message on failure
     pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
         let mut tokens = Vec::new();
         let mut chars = input.chars().peekable();

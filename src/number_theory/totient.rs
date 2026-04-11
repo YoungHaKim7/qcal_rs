@@ -1,36 +1,107 @@
-//! Euler's totient function
+//! # Euler's Totient Function (φ)
 //!
-//! Provides computation of Euler's totient function φ(n), which counts
-//! the positive integers up to n that are relatively prime to n.
+//! This module provides computation of Euler's totient function φ(n), one of the most
+//! important functions in number theory.
+//!
+//! ## Mathematical Definition
+//!
+//! Euler's totient function φ(n) counts the positive integers up to n that are
+//! relatively prime to n (i.e., their greatest common divisor with n is 1).
+//!
+//! ### Formula using Prime Factorization
+//!
+//! If n has the prime factorization:
+//! ```text
+//! n = p₁^k₁ × p₂^k₂ × ... × p_m^k_m
+//! ```
+//!
+//! Then:
+//! ```text
+//! φ(n) = n × Π(1 - 1/p_i) for all distinct prime factors p_i
+//! ```
+//!
+//! ### Equivalent Forms
+//! ```text
+//! φ(n) = Π(p_i^k_i - p_i^(k_i-1)) for all prime factors p_i
+//! φ(n) = Π(p_i - 1) × p_i^(k_i-1) for all prime factors p_i
+//! ```
+//!
+//! ## Key Properties
+//!
+//! - **Multiplicative**: If gcd(a, b) = 1, then φ(ab) = φ(a) × φ(b)
+//! - **For prime p**: φ(p) = p - 1
+//! - **For prime power**: φ(p^k) = p^k - p^(k-1) = p^k × (1 - 1/p)
+//! - **For n > 2**: φ(n) is always even
+//! - **Sum over divisors**: Σ φ(d) = n for all d dividing n
+//!
+//! ## Examples
+//! ```text
+//! φ(1) = 1
+//! φ(7) = 6           [7 is prime, so φ(7) = 7-1]
+//! φ(9) = 6           [9 = 3², φ(9) = 9(1-1/3) = 6]
+//! φ(10) = 4          [Numbers coprime to 10: 1,3,7,9]
+//! φ(30) = 8          [30 × (1-1/2)(1-1/3)(1-1/5) = 8]
+//! ```
+//!
+//! ## Applications
+//!
+//! - **Euler's Theorem**: a^φ(n) ≡ 1 (mod n) for gcd(a, n) = 1
+//! - **RSA Encryption**: φ(n) determines the private key
+//! - **Cyclic Groups**: φ(n) counts generators of Z_n
+//! - **Ramanujan Sum**: Number theory and signal processing
 
-/// Computes Euler's totient function φ(n).
+/// # Euler's Totient Function φ(n)
 ///
-/// The totient function counts the number of positive integers up to n
-/// that are coprime with n (i.e., their greatest common divisor is 1).
+/// Computes Euler's totient function φ(n), which counts positive integers
+/// up to n that are coprime with n (gcd(k, n) = 1).
 ///
-/// # Formula
+/// ## Mathematical Formula
 ///
-/// For n = p₁^k₁ × p₂^k₂ × ... × p_m^k_m (prime factorization):
+/// For n with prime factorization n = p₁^k₁ × p₂^k₂ × ... × p_m^k_m:
+/// ```text
 /// φ(n) = n × Π(1 - 1/p_i) for all distinct prime factors p_i
+/// ```
 ///
-/// # Arguments
+/// ## Algorithm
 ///
-/// * `n` - The integer to compute φ for (must be non-zero)
+/// 1. Start with result = n
+/// 2. For each distinct prime factor p of n:
+///    - Divide n by p as many times as possible
+///    - Apply: result -= result / p (equivalent to result *= (1 - 1/p))
+/// 3. Return the final result
 ///
-/// # Returns
+/// ## Time Complexity
+/// - O(√n) - checks all potential prime factors up to √n
 ///
-/// φ(n)
-///
-/// # Examples
-///
+/// ## Examples
 /// ```
 /// use tcal_rs::totient;
 ///
+/// // φ(1) = 1 by definition
 /// assert_eq!(totient(1), 1);
+///
+/// // For primes: φ(p) = p - 1
 /// assert_eq!(totient(7), 6);   // 7 is prime
+/// assert_eq!(totient(11), 10);
+///
+/// // For prime powers: φ(p^k) = p^k - p^(k-1)
 /// assert_eq!(totient(9), 6);   // 9 = 3², φ(9) = 9(1-1/3) = 6
-/// assert_eq!(totient(10), 4);  // Numbers coprime to 10: 1,3,7,9
+/// assert_eq!(totient(8), 4);   // 8 = 2³, φ(8) = 8(1-1/2) = 4
+///
+/// // For composite numbers
+/// assert_eq!(totient(10), 4);  // φ(10) = 10(1-1/2)(1-1/5) = 4
+/// assert_eq!(totient(30), 8);  // φ(30) = 30(1-1/2)(1-1/3)(1-1/5) = 8
+///
+/// // Multiplicative property: φ(ab) = φ(a)φ(b) for coprime a,b
+/// // φ(15) = φ(3)φ(5) = 2 × 4 = 8
+/// assert_eq!(totient(15), 8);
 /// ```
+///
+/// # Arguments
+/// * `n` - The integer to compute φ for (can be negative, uses absolute value)
+///
+/// # Returns
+/// φ(n), or 0 if n = 0
 pub fn totient(n: i64) -> i64 {
     if n == 0 {
         return 0;
