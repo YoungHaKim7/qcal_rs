@@ -1,5 +1,5 @@
 use super::ast::*;
-use tcal_rs::{totient, gcd, lcm};
+use crate::{totient, gcd, lcm};
 use std::collections::HashMap;
 
 pub struct Evaluator {

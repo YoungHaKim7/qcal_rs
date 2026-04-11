@@ -1,8 +1,5 @@
-mod calculator;
-mod fprice;
-
-use calculator::engine::Engine;
 use rustyline::DefaultEditor;
+use tcal_rs::calculator::engine::Engine;
 
 fn main() -> rustyline::Result<()> {
     println!("Qalculate CLI - Interactive Calculator");
