@@ -172,3 +172,45 @@ When adding new functions:
 ## License
 
 This is a Rust port of libqalculate number theory module.
+
+# rustline구현
+- Done! I've successfully implemented arrow key navigation for history using standard library plus `libc` (which is the standard way to access system calls on Unix systems).
+
+**Features implemented:**
+
+1. **Arrow Key Navigation:**
+   - **↑ Up Arrow**: Browse through previous commands in history
+   - **↓ Down Arrow**: Browse forward through history (or return to current input)
+   - **← Left Arrow**: Move cursor left
+   - **→ Right Arrow**: Move cursor right
+
+2. **History Management:**
+   - Loads previous commands from `history.txt` on startup
+   - Saves new commands to `history.txt` on exit
+   - Maintains in-memory history during session
+
+3. **Enhanced User Experience:**
+   - Raw terminal mode for proper character capture
+   - Backspace support for editing
+   - Ctrl+C/Ctrl+D to exit
+   - Real-time line editing
+
+**Key Implementation Details:**
+
+- Uses `libc` crate for `termios` system calls (standard for Unix terminal control)
+- ANSI escape sequences for arrow keys and cursor movement
+- Platform-specific implementation with `#[cfg(unix)]` 
+- Fallback for non-Unix systems
+
+**Usage:**
+```bash
+cargo run --release
+```
+
+Then you can:
+- Type commands and press Enter to execute
+- Press **↑** to recall previous commands
+- Press **↓** to go forward in history
+- Press **←/→** to move within the current line
+- Press **Backspace** to delete characters
+- Type `exit`, `quit`, or press **Ctrl+C** to exit

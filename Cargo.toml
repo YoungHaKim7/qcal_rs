@@ -12,7 +12,7 @@ keywords = ["math", "number-theory", "primes", "gcd", "lcm"]
 categories = ["mathematics", "algorithms", "no-std"]
 
 [dependencies]
-rustyline = "15"
+libc = "0.2"
 
 [lib]
 name = "tcal_rs"
