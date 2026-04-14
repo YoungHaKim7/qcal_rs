@@ -2,7 +2,8 @@ use std::{io, path::Path};
 
 use tcal_rs::{
     calculator::engine::Engine,
-    save_history::{load_history, readline_with_history, save_history},
+    readline::readline_with_history,
+    save_history::{load_history, save_history},
 };
 
 fn main() -> io::Result<()> {

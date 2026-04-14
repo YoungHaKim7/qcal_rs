@@ -251,3 +251,32 @@ fn detect_auto_base(input: &str) -> Option<i64> {
 <br />
 
 <hr />
+
+# Code
+- Done! I've successfully split the code by function into three modules:
+
+**1. `src/unicode/mod.rs`** - UTF-8 character handling
+- `read_utf8_char()` - Reads a single UTF-8 character from stdin
+- `utf8_char_width()` - Determines byte width of UTF-8 character
+
+**2. `src/readline/mod.rs`** (NEW) - Interactive readline with terminal control
+- `set_raw_mode()` - Terminal raw/cooked mode control
+- `read_single_byte()` - Low-level byte reading
+- `readline_with_history()` - Full readline implementation with:
+  - History navigation (up/down arrows)
+  - Cursor movement (left/right arrows)
+  - Backspace handling
+  - Ctrl+C/Ctrl+D exit
+
+**3. `src/save_history/mod.rs`** - Simplified to only file I/O
+- `load_history()` - Load command history from file
+- `save_history()` - Save command history to file
+
+**Changes made:**
+- Created new `readline/` module
+- Moved terminal and readline logic from `save_history/` to `readline/`
+- Simplified `save_history/` to only contain file operations
+- Updated `lib.rs` to include the `readline` module
+- Updated `main.rs` imports to use the new module structure
+
+The project builds successfully with `cargo build`.

@@ -105,5 +105,6 @@ pub use number_theory::traits::{Divisors, Gcd, Lcm};
 
 pub mod calculator;
 pub mod fprice;
+pub mod readline;
 pub mod save_history;
 pub mod unicode;
