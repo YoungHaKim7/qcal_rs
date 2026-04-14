@@ -84,23 +84,31 @@ pub fn readline_with_history(prompt: &str, history: &[String]) -> io::Result<Opt
     io::stdout().flush()?;
 
     loop {
-        match read_single_char() {
+        use crate::unicode::read_utf8_char;
+
+        match read_utf8_char() {
             Ok(ch) => {
-                if ch == CTRL_C || ch == CTRL_D {
+                if ch as u8 == CTRL_C || ch as u8 == CTRL_D {
                     // Exit on Ctrl+C or Ctrl+D
                     let _ = set_raw_mode(false);
                     println!();
                     return Ok(None);
-                } else if ch == ENTER {
+                } else if ch as u8 == ENTER {
                     // Enter key - submit
                     println!();
                     let _ = set_raw_mode(false);
                     return Ok(Some(result.clone()));
-                } else if ch == BACKSPACE {
-                    // Backspace
+                } else if ch as u8 == BACKSPACE {
+                    // Backspace - remove character before cursor
                     if cursor_pos > 0 {
-                        result.remove(cursor_pos - 1);
-                        cursor_pos -= 1;
+                        // Find previous character boundary
+                        let prev_char_start = result[..cursor_pos]
+                            .char_indices()
+                            .last()
+                            .map(|(i, _)| i)
+                            .unwrap_or(0);
+                        result.remove(prev_char_start);
+                        cursor_pos = prev_char_start;
                         // Redraw line
                         print!("\r{}{}\x1B[0K", prompt, result);
                         // Move cursor back
@@ -109,7 +117,7 @@ pub fn readline_with_history(prompt: &str, history: &[String]) -> io::Result<Opt
                         }
                         io::stdout().flush()?;
                     }
-                } else if ch == ESC {
+                } else if ch as u8 == ESC {
                     // Escape sequence - check for arrow keys
                     // Read the next two characters
                     if let Ok(ch1) = read_single_char() {
@@ -159,17 +167,28 @@ pub fn readline_with_history(prompt: &str, history: &[String]) -> io::Result<Opt
                                         }
                                     }
                                     b'C' => {
-                                        // Right arrow
+                                        // Right arrow - move to next character boundary
                                         if cursor_pos < result.len() {
-                                            cursor_pos += 1;
+                                            // Find next character boundary
+                                            let next_pos = result[cursor_pos..]
+                                                .char_indices()
+                                                .nth(1)
+                                                .map(|(i, _)| cursor_pos + i)
+                                                .unwrap_or(result.len());
+                                            cursor_pos = next_pos;
                                             print!("\x1B[C");
                                             io::stdout().flush()?;
                                         }
                                     }
                                     b'D' => {
-                                        // Left arrow
+                                        // Left arrow - move to previous character boundary
                                         if cursor_pos > 0 {
-                                            cursor_pos -= 1;
+                                            // Find previous character boundary
+                                            cursor_pos = result[..cursor_pos]
+                                                .char_indices()
+                                                .last()
+                                                .map(|(i, _)| i)
+                                                .unwrap_or(0);
                                             print!("\x1B[D");
                                             io::stdout().flush()?;
                                         }
@@ -179,10 +198,11 @@ pub fn readline_with_history(prompt: &str, history: &[String]) -> io::Result<Opt
                             }
                         }
                     }
-                } else if ch >= 32 && ch <= 126 {
+                } else if !ch.is_control() {
                     // Printable character
-                    result.insert(cursor_pos, ch as char);
-                    cursor_pos += 1;
+                    result.insert(cursor_pos, ch);
+                    // Update cursor_pos by adding the byte length of the inserted character
+                    cursor_pos += ch.len_utf8();
                     // Redraw line from cursor position
                     print!("\r{}\x1B[0K{}", prompt, &result[..cursor_pos]);
                     // Print rest of line

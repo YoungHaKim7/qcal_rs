@@ -214,3 +214,31 @@ Then you can:
 - Press **←/→** to move within the current line
 - Press **Backspace** to delete characters
 - Type `exit`, `quit`, or press **Ctrl+C** to exit
+
+# Unicode Fix
+- The code compiles now. Here's a summary of the fixes I made for Unicode input:
+
+**The problem:** The `read_utf8_char()` function returns a `char`, but you were comparing it directly with `u8` constants (`CTRL_C`, `CTRL_D`, `ENTER`, `BACKSPACE`, `ESC`).
+
+**The fixes applied:**
+1. Line 91: Changed `ch == CTRL_C || ch == CTRL_D` to `ch as u8 == CTRL_C || ch as u8 == CTRL_D`
+2. Line 96: Changed `ch == ENTER` to `ch as u8 == ENTER`
+3. Line 101: Changed `ch == BACKSPACE` to `ch as u8 == BACKSPACE`
+4. Line 114: Changed `ch == ESC` to `ch as u8 == ESC`
+5. Line 186: Removed redundant `ch as char` since `ch` is already a `char`
+
+These type casts allow the Unicode character to be properly compared with the control character byte values, fixing the Unicode input bug.
+
+- The fix is complete. The issue was that `cursor_pos` was being used as a byte index (for `String::insert()` and `String::remove()`), but it was being incremented/decremented by 1 instead of by the actual byte length of UTF-8 characters.
+
+**Changes made:**
+
+1. **Backspace handling** (line 101-119): Now properly finds the previous character boundary using `char_indices()` before removing.
+
+2. **Right arrow** (line 170-180): Now moves to the next character boundary using `char_indices()` instead of assuming each character is 1 byte.
+
+3. **Left arrow** (line 182-193): Now moves to the previous character boundary using `char_indices()`.
+
+4. **Character insertion** (line 201-216): Now adds the correct UTF-8 byte length (`ch.len_utf8()`) to `cursor_pos` instead of always adding 1.
+
+The program now properly handles multi-byte UTF-8 characters like Korean input 'ㅇ'.
