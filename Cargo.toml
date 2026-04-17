@@ -2,7 +2,7 @@
 name = "tcal_rs"
 version = "0.2.1"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.95"
 
 description = "Number theory functions library - Rust port of libqalculate number theory module"
 license = "GPL-2.0-or-later"
