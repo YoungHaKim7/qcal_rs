@@ -30,7 +30,6 @@ opt-level = 3
 lto = true
 codegen-units = 1
 
-
 # https://blog.rust-lang.org/2026/04/04/docsrs-only-default-targets/
 [package.metadata.docs.rs]
 targets = [

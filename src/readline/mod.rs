@@ -117,82 +117,81 @@ pub fn readline_with_history(prompt: &str, history: &[String]) -> io::Result<Opt
                 } else if ch as u8 == 0x1B {
                     // Escape sequence - check for arrow keys
                     // Read the next two characters
-                    if let Ok(ch1) = read_single_byte() {
-                        if ch1 == b'[' {
-                            if let Ok(ch2) = read_single_byte() {
-                                match ch2 {
-                                    b'A' => {
-                                        // Up arrow - previous history
-                                        if history.is_empty() {
-                                            continue;
-                                        }
+                    if let Ok(ch1) = read_single_byte()
+                        && ch1 == b'['
+                        && let Ok(ch2) = read_single_byte()
+                    {
+                        match ch2 {
+                            b'A' => {
+                                // Up arrow - previous history
+                                if history.is_empty() {
+                                    continue;
+                                }
 
-                                        // Save current input if this is first navigation
-                                        if history_index.is_none() {
-                                            temp_input = result.clone();
-                                            history_index = Some(history.len());
-                                        }
+                                // Save current input if this is first navigation
+                                if history_index.is_none() {
+                                    temp_input = result.clone();
+                                    history_index = Some(history.len());
+                                }
 
-                                        if let Some(idx) = history_index {
-                                            if idx > 0 {
-                                                history_index = Some(idx - 1);
-                                                result = history[idx - 1].clone();
-                                                cursor_pos = result.len();
-                                                // Redraw line
-                                                print!("\r{}{}\x1B[0K", prompt, result);
-                                                io::stdout().flush()?;
-                                            }
-                                        }
-                                    }
-                                    b'B' => {
-                                        // Down arrow - next history
-                                        if let Some(idx) = history_index {
-                                            if idx < history.len() {
-                                                if idx + 1 == history.len() {
-                                                    // Return to current input
-                                                    result = temp_input.clone();
-                                                    history_index = None;
-                                                } else {
-                                                    history_index = Some(idx + 1);
-                                                    result = history[idx + 1].clone();
-                                                }
-                                                cursor_pos = result.len();
-                                                // Redraw line
-                                                print!("\r{}{}\x1B[0K", prompt, result);
-                                                io::stdout().flush()?;
-                                            }
-                                        }
-                                    }
-                                    b'C' => {
-                                        // Right arrow - move to next character boundary
-                                        if cursor_pos < result.len() {
-                                            // Find next character boundary
-                                            let next_pos = result[cursor_pos..]
-                                                .char_indices()
-                                                .nth(1)
-                                                .map(|(i, _)| cursor_pos + i)
-                                                .unwrap_or(result.len());
-                                            cursor_pos = next_pos;
-                                            print!("\x1B[C");
-                                            io::stdout().flush()?;
-                                        }
-                                    }
-                                    b'D' => {
-                                        // Left arrow - move to previous character boundary
-                                        if cursor_pos > 0 {
-                                            // Find previous character boundary
-                                            cursor_pos = result[..cursor_pos]
-                                                .char_indices()
-                                                .last()
-                                                .map(|(i, _)| i)
-                                                .unwrap_or(0);
-                                            print!("\x1B[D");
-                                            io::stdout().flush()?;
-                                        }
-                                    }
-                                    _ => {}
+                                if let Some(idx) = history_index
+                                    && idx > 0
+                                {
+                                    history_index = Some(idx - 1);
+                                    result = history[idx - 1].clone();
+                                    cursor_pos = result.len();
+                                    // Redraw line
+                                    print!("\r{}{}\x1B[0K", prompt, result);
+                                    io::stdout().flush()?;
                                 }
                             }
+                            b'B' => {
+                                // Down arrow - next history
+                                if let Some(idx) = history_index
+                                    && idx < history.len()
+                                {
+                                    if idx + 1 == history.len() {
+                                        // Return to current input
+                                        result = temp_input.clone();
+                                        history_index = None;
+                                    } else {
+                                        history_index = Some(idx + 1);
+                                        result = history[idx + 1].clone();
+                                    }
+                                    cursor_pos = result.len();
+                                    // Redraw line
+                                    print!("\r{}{}\x1B[0K", prompt, result);
+                                    io::stdout().flush()?;
+                                }
+                            }
+                            b'C' => {
+                                // Right arrow - move to next character boundary
+                                if cursor_pos < result.len() {
+                                    // Find next character boundary
+                                    let next_pos = result[cursor_pos..]
+                                        .char_indices()
+                                        .nth(1)
+                                        .map(|(i, _)| cursor_pos + i)
+                                        .unwrap_or(result.len());
+                                    cursor_pos = next_pos;
+                                    print!("\x1B[C");
+                                    io::stdout().flush()?;
+                                }
+                            }
+                            b'D' => {
+                                // Left arrow - move to previous character boundary
+                                if cursor_pos > 0 {
+                                    // Find previous character boundary
+                                    cursor_pos = result[..cursor_pos]
+                                        .char_indices()
+                                        .last()
+                                        .map(|(i, _)| i)
+                                        .unwrap_or(0);
+                                    print!("\x1B[D");
+                                    io::stdout().flush()?;
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 } else if !ch.is_control() {

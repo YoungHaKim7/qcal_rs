@@ -104,7 +104,7 @@ pub fn is_prime(n: u64) -> bool {
     if n == 2 || n == 3 {
         return true;
     }
-    if n % 2 == 0 {
+    if n.is_multiple_of(2) {
         return false;
     }
 
@@ -122,7 +122,7 @@ fn miller_rabin_u64(n: u64) -> bool {
     // Write n-1 as d*2^s
     let mut d = n - 1;
     let mut s = 0;
-    while d % 2 == 0 {
+    while d.is_multiple_of(2) {
         d /= 2;
         s += 1;
     }
