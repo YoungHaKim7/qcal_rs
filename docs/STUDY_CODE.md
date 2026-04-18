@@ -280,3 +280,90 @@ fn detect_auto_base(input: &str) -> Option<i64> {
 - Updated `main.rs` imports to use the new module structure
 
 The project builds successfully with `cargo build`.
+
+# Clippy
+
+```bash
+$ cargo clippy --all-features --all-targets -- -D warnings
+```
+
+```bash
+error: this `if` can be collapsed into the outer `match`
+   --> src/readline/mod.rs:169:33
+    |
+169 | / ...                   if cursor_pos < result.len() {
+170 | | ...                       // Find next character boundary
+171 | | ...                       let next_pos = result[cursor_pos..]
+172 | | ...                           .char_indices()
+...   |
+178 | | ...                       io::stdout().flush()?;
+179 | | ...                   }
+    | |_______________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.95.0/index.html#collapsible_match
+    = note: `-D clippy::collapsible-match` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_match)]`
+help: collapse nested if block
+    |
+167 ~                             b'C'
+168 |                                 // Right arrow - move to next character boundary
+169 ~                                 if cursor_pos < result.len() => {
+170 |                                     // Find next character boundary
+...
+178 |                                     io::stdout().flush()?;
+179 ~                                 }
+    |
+
+error: this `if` can be collapsed into the outer `match`
+   --> src/readline/mod.rs:183:33
+    |
+183 | / ...                   if cursor_pos > 0 {
+184 | | ...                       // Find previous character boundary
+185 | | ...                       cursor_pos = result[..cursor_pos]
+186 | | ...                           .char_indices()
+...   |
+191 | | ...                       io::stdout().flush()?;
+192 | | ...                   }
+    | |_______________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.95.0/index.html#collapsible_match
+help: collapse nested if block
+    |
+181 ~                             b'D'
+182 |                                 // Left arrow - move to previous character boundary
+183 ~                                 if cursor_pos > 0 => {
+184 |                                     // Find previous character boundary
+...
+191 |                                     io::stdout().flush()?;
+192 ~                                 }
+    |
+
+error: could not compile `tcal_rs` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+```
+
+- Fixed both clippy warnings by collapsing the nested `if` statements into match guards:
+
+1. **Right arrow (`b'C'`)**: `b'C' if cursor_pos < result.len() => { ... }`
+2. **Left arrow (`b'D'`)**: `b'D' if cursor_pos > 0 => { ... }`
+
+This uses Rust's match guard pattern, which is more idiomatic and satisfies clippy's `collapsible_match` lint.
+
+```rs
+ Update(src/main.rs)
+  ⎿  Added 1 line, removed 5 lines
+      14      let mut history = load_history(history_path)?;
+      15      let mut engine = Engine::new();
+      16
+      17 -    loop {
+      18 -        let input = match readline_with_history("> ", &history)? {
+      19 -            Some(input) => input,
+      20 -            None => break, // User pressed Ctrl+C or Ctrl+D
+      21 -        };
+      17 +    while let Some(input) = readline_with_history("> ", &history)? {
+      18
+      19          if input.is_empty() {
+      20              continue;
+
+⏺ Bash(cargo clippy --all-features --all-targets -- -D warnings)
+```

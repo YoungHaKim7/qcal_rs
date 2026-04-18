@@ -14,11 +14,7 @@ fn main() -> io::Result<()> {
     let mut history = load_history(history_path)?;
     let mut engine = Engine::new();
 
-    loop {
-        let input = match readline_with_history("> ", &history)? {
-            Some(input) => input,
-            None => break, // User pressed Ctrl+C or Ctrl+D
-        };
+    while let Some(input) = readline_with_history("> ", &history)? {
 
         if input.is_empty() {
             continue;

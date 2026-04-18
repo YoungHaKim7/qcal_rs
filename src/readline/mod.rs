@@ -164,32 +164,28 @@ pub fn readline_with_history(prompt: &str, history: &[String]) -> io::Result<Opt
                                     io::stdout().flush()?;
                                 }
                             }
-                            b'C' => {
+                            b'C' if cursor_pos < result.len() => {
                                 // Right arrow - move to next character boundary
-                                if cursor_pos < result.len() {
-                                    // Find next character boundary
-                                    let next_pos = result[cursor_pos..]
-                                        .char_indices()
-                                        .nth(1)
-                                        .map(|(i, _)| cursor_pos + i)
-                                        .unwrap_or(result.len());
-                                    cursor_pos = next_pos;
-                                    print!("\x1B[C");
-                                    io::stdout().flush()?;
-                                }
+                                // Find next character boundary
+                                let next_pos = result[cursor_pos..]
+                                    .char_indices()
+                                    .nth(1)
+                                    .map(|(i, _)| cursor_pos + i)
+                                    .unwrap_or(result.len());
+                                cursor_pos = next_pos;
+                                print!("\x1B[C");
+                                io::stdout().flush()?;
                             }
-                            b'D' => {
+                            b'D' if cursor_pos > 0 => {
                                 // Left arrow - move to previous character boundary
-                                if cursor_pos > 0 {
-                                    // Find previous character boundary
-                                    cursor_pos = result[..cursor_pos]
-                                        .char_indices()
-                                        .last()
-                                        .map(|(i, _)| i)
-                                        .unwrap_or(0);
-                                    print!("\x1B[D");
-                                    io::stdout().flush()?;
-                                }
+                                // Find previous character boundary
+                                cursor_pos = result[..cursor_pos]
+                                    .char_indices()
+                                    .last()
+                                    .map(|(i, _)| i)
+                                    .unwrap_or(0);
+                                print!("\x1B[D");
+                                io::stdout().flush()?;
                             }
                             _ => {}
                         }
