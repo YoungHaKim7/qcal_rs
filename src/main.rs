@@ -15,7 +15,6 @@ fn main() -> io::Result<()> {
     let mut engine = Engine::new();
 
     while let Some(input) = readline_with_history("> ", &history)? {
-
         if input.is_empty() {
             continue;
         }

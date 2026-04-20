@@ -39,17 +39,31 @@ impl Formatter {
             .collect::<Vec<_>>()
             .join(" ")
     }
-
     fn format_64bit(value: i64) -> String {
         let bits = format!("{:064b}", value);
 
         let upper = &bits[0..32];
         let lower = &bits[32..64];
 
+        let upper_grouped = Self::group4(upper);
+        let lower_grouped = Self::group4(lower);
+
+        // total width of the grouped line
+        let width = upper_grouped.len();
+
+        // split into 3 logical sections
+        let col = (width / 3) + 1;
+
+        let header_top = format!("{:<col$}{:^col$}{:>col$}", "63", "47", "32", col = col);
+
+        let header_bottom = format!("{:<col$}{:^col$}{:>col$}", "31", "15", "0", col = col);
+
         format!(
-            "{}\n63                      47                  32\n\n{}\n31                      15                   0",
-            Self::group4(upper),
-            Self::group4(lower)
+            "{upper}\n{top}\n\n{lower}\n{bottom}",
+            upper = upper_grouped,
+            top = header_top,
+            lower = lower_grouped,
+            bottom = header_bottom,
         )
     }
 
